@@ -1,21 +1,15 @@
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { useUserStore } from '@/stores/user'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import AppFooter from '@/components/layout/AppFooter.vue'
-import { useToast } from 'vue-toastification'
 
 const route = useRoute()
-const userStore = useUserStore()
-const toast = useToast()
 
 // Layout state
-const isSidebarOpen = ref(false)
-const isLoading = ref(true)
+const isSidebarOpen = ref(true)
 const isMobile = ref(false)
-const error = ref(null)
 
 // Toggle sidebar
 const toggleSidebar = () => {
@@ -44,48 +38,11 @@ const handleResize = () => {
   checkIfMobile()
 }
 
-// Set page title based on route meta
-const pageTitle = computed(() => {
-  return route.meta.title || 'JobCompass AI'
-})
-
-// Set document title
-watch(pageTitle, (newTitle) => {
-  document.title = `${newTitle} | JobCompass AI`
-}, { immediate: true })
-
-// Fetch initial data
-const fetchInitialData = async () => {
-  try {
-    isLoading.value = true
-    
-    // Fetch user data if not already loaded
-    if (!userStore.isAuthenticated && userStore.token) {
-      await userStore.fetchUser()
-    }
-    
-    // Fetch any other initial data here
-    
-  } catch (err) {
-    console.error('Failed to load initial data:', err)
-    error.value = 'Failed to load application data. Please try again later.'
-    toast.error('Failed to load application data')
-  } finally {
-    isLoading.value = false
-  }
-}
-
 // Initialize
-onMounted(async () => {
+onMounted(() => {
   checkIfMobile()
   window.addEventListener('resize', handleResize)
-  
-  // Only fetch data if we have a token
-  if (userStore.token) {
-    await fetchInitialData()
-  } else {
-    isLoading.value = false
-  }
+  document.title = 'JobCompass AI'
 })
 
 // Cleanup
@@ -110,74 +67,30 @@ onBeforeUnmount(() => {
       @toggle-sidebar="toggleSidebar"
     />
 
+    <!-- Main content -->
     <div class="flex flex-1 overflow-hidden">
       <!-- Sidebar -->
       <AppSidebar 
         :is-open="isSidebarOpen"
         @close="isSidebarOpen = false"
+        class="z-40"
       />
 
-      <!-- Main content -->
+      <!-- Main content area -->
       <main 
         id="main-content"
-        class="flex-1 relative z-0 overflow-y-auto focus:outline-none"
+        class="flex-1 overflow-y-auto focus:outline-none"
         tabindex="0"
       >
-        <!-- Loading overlay -->
-        <div 
-          v-if="isLoading"
-          class="fixed inset-0 bg-white dark:bg-gray-900 bg-opacity-75 flex items-center justify-center z-50"
-        >
-          <div class="text-center">
-            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto"></div>
-            <p class="mt-4 text-sm text-gray-600 dark:text-gray-300">Loading application...</p>
-          </div>
-        </div>
-
-        <!-- Error state -->
-        <div 
-          v-else-if="error"
-          class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
-        >
-          <div class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-400 dark:border-red-500 p-4 rounded">
-            <div class="flex">
-              <div class="flex-shrink-0">
-                <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
-                </svg>
-              </div>
-              <div class="ml-3">
-                <p class="text-sm text-red-700 dark:text-red-300">
-                  {{ error }}
-                </p>
-              </div>
-              <div class="ml-auto pl-3">
-                <div class="-mx-1.5 -my-1.5">
-                  <button 
-                    type="button" 
-                    class="inline-flex rounded-md bg-red-50 dark:bg-red-900/20 p-1.5 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2 focus:ring-offset-red-50 dark:focus:ring-offset-red-900/20"
-                    @click="fetchInitialData"
-                  >
-                    <span class="sr-only">Retry</span>
-                    <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                      <path fill-rule="evenodd" d="M15.312 11.424a5.5 5.5 0 01-9.201 2.466l-.312-.311h2.433a.75.75 0 000-1.5H3.989a.75.75 0 00-.75.75v4.242a.75.75 0 001.5 0v-2.43l.31.31a7 7 0 0011.712-3.138.75.75 0 00-1.449-.39zm1.23-3.723a.75.75 0 00.219-.53V2.929a.75.75 0 00-1.5 0V5.36l-.31-.31A7 7 0 003.239 8.188a.75.75 0 101.448.389A5.5 5.5 0 0113.89 6.11l.311.31h-2.432a.75.75 0 000 1.5h4.243a.75.75 0 00.53-.219z" clip-rule="evenodd" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <!-- Page content -->
-        <div v-else class="flex-1 overflow-auto">
+        <div class="flex-1 overflow-auto">
           <!-- Page header -->
           <div class="bg-white dark:bg-gray-800 shadow">
             <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
               <div class="md:flex md:items-center md:justify-between">
                 <div class="min-w-0 flex-1">
                   <h1 class="text-2xl font-bold leading-7 text-gray-900 dark:text-white sm:truncate sm:tracking-tight">
-                    {{ pageTitle }}
+                    {{ route.meta.title || 'JobCompass AI' }}
                   </h1>
                 </div>
                 <div class="mt-4 flex md:mt-0 md:ml-4">
@@ -186,9 +99,9 @@ onBeforeUnmount(() => {
               </div>
               
               <!-- Breadcrumbs -->
-              <nav class="mt  -4 flex" aria-label="Breadcrumb">
+              <nav v-if="route.meta.breadcrumbs" class="mt-4 flex" aria-label="Breadcrumb">
                 <ol role="list" class="flex items-center space-x-2">
-                  <li v-for="(item, index) in route.meta.breadcrumbs || []" :key="index">
+                  <li v-for="(item, index) in route.meta.breadcrumbs" :key="index">
                     <div class="flex items-center">
                       <template v-if="index > 0">
                         <svg class="h-5 w-5 flex-shrink-0 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">

@@ -1,24 +1,17 @@
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
-import { RouterView, useRoute, useRouter } from 'vue-router'
-import { useUserStore } from '@/stores/user'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { RouterView, useRoute } from 'vue-router'
 import { useToast } from 'vue-toastification'
 import AppLayout from '@/layouts/AppLayout.vue'
-import AuthLayout from '@/layouts/AuthLayout.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 
 const route = useRoute()
-const router = useRouter()
-const userStore = useUserStore()
 const toast = useToast()
 
 // App state
-const isAppReady = ref(false)
+const isAppReady = ref(true)
 const error = ref(null)
 const isOnline = ref(navigator.onLine)
-
-// Check if current route is an auth page
-const isAuthPage = computed(() => route.meta.requiresAuth === false)
 
 // Handle network status changes
 const updateNetworkStatus = () => {
@@ -28,25 +21,10 @@ const updateNetworkStatus = () => {
   }
 }
 
-// Handle route changes
-const handleRouteChange = (to) => {
-  // Scroll to top on route change
-  window.scrollTo(0, 0)
-  
-  // Track page view for analytics (if implemented)
-  if (window.gtag && to.name) {
-    window.gtag('config', import.meta.env.VITE_GA_MEASUREMENT_ID, {
-      page_path: to.path,
-      page_title: to.meta.title || document.title
-    })
-  }
-}
-
 // Initialize app
-const initializeApp = async () => {
+const initializeApp = () => {
   try {
-    // Initialize user store (checks auth status, loads user data, etc.)
-    await userStore.initAuth()
+    // Any app initialization code can go here
     
     // If user is authenticated but on auth page, redirect to dashboard
     if (userStore.isAuthenticated && isAuthPage.value) {

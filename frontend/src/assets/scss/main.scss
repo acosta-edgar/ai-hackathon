@@ -4,6 +4,8 @@
 @import 'tailwindcss/utilities';
 
 // Custom variables
+@import 'variables';
+
 :root {
   --header-height: 64px;
   --sidebar-width: 250px;
