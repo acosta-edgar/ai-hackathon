@@ -337,6 +337,10 @@ class GeminiApiService
         array $userProfile,
         array $searchCriteria = []
     ): string {
+        $jobType = isset($post['post_type']) ? $post['post_type'] : 'Not specified';
+        $experienceLevel = isset($post['experience_level']) ? $post['experience_level'] : 'Not specified';
+        $skills = $this->formatSkills(isset($post['skills']) ? $post['skills'] : []);
+        
         return <<<PROMPT
         Analyze the match between the following post and candidate profile.
         
@@ -344,9 +348,9 @@ class GeminiApiService
         - Title: {$post['title']}
         - Company: {$post['company_name']}
         - Location: {$post['location']}
-        - Job Type: {$post['post_type'] ?? 'Not specified'}
-        - Experience Level: {$post['experience_level'] ?? 'Not specified'}
-        - Skills: {$this->formatSkills($post['skills'] ?? [])}
+        - Job Type: {$jobType}
+        - Experience Level: {$experienceLevel}
+        - Skills: {$skills}
         - Description: {$post['description']}
         
         Candidate Profile:
