@@ -1,0 +1,113 @@
+# Cursor Rules for AI Hackathon Project
+
+## Project Overview
+This is a Laravel backend API with Vue.js frontend project for an AI-powered job matching platform. The project uses modern PHP 8+ features and Vue 3 with Composition API.
+
+## Backend (Laravel) Rules
+
+### Code Style
+- Follow PSR-12 coding standards
+- Use type hints for all method parameters and return types
+- Prefer dependency injection over static calls
+- Use Laravel's built-in features (Eloquent, Collections, etc.)
+- Follow Laravel naming conventions (snake_case for database, camelCase for variables)
+
+### Architecture
+- Controllers should be thin - delegate business logic to Services
+- Use Form Requests for validation
+- Models should have relationships and accessors/mutators
+- Services should handle complex business logic
+- Use Repository pattern for database operations if needed
+
+### API Design
+- Follow RESTful conventions
+- Use consistent HTTP status codes
+- Return JSON responses with proper structure
+- Include error handling and validation messages
+- Use API resources for response formatting
+
+### Database
+- Use migrations for all database changes
+- Follow Laravel naming conventions for tables and columns
+- Use foreign key constraints
+- Add indexes for frequently queried columns
+
+## Frontend (Vue.js) Rules
+
+### Code Style
+- Use Vue 3 Composition API
+- Use TypeScript for type safety
+- Follow Vue.js style guide
+- Use camelCase for variables and methods
+- Use PascalCase for component names
+
+### Component Structure
+- Keep components small and focused
+- Use props for parent-child communication
+- Use emits for child-parent communication
+- Use composables for reusable logic
+- Prefer composition over inheritance
+
+### State Management
+- Use Pinia for global state management
+- Keep local state in components when possible
+- Use reactive() and ref() appropriately
+
+### Styling
+- Use CSS modules or scoped styles
+- Follow BEM methodology for CSS classes
+- Use CSS custom properties for theming
+- Make components responsive
+
+## General Rules
+
+### Code Quality
+- Write self-documenting code with clear variable names
+- Add comments for complex business logic
+- Use meaningful commit messages
+- Keep functions small and focused
+- Avoid code duplication
+
+### Testing
+- Write unit tests for business logic
+- Write feature tests for API endpoints
+- Use factories for test data
+- Aim for good test coverage
+
+### Security
+- Validate all user inputs
+- Use Laravel's built-in security features
+- Sanitize data before database operations
+- Use HTTPS in production
+- Implement proper authentication and authorization
+
+### Performance
+- Use eager loading for relationships
+- Implement caching where appropriate
+- Optimize database queries
+- Use pagination for large datasets
+- Minimize bundle size in frontend
+
+### Documentation
+- Document API endpoints
+- Add README files for complex features
+- Use PHPDoc for PHP methods
+- Document component props and events
+
+## File Organization
+- Keep related files together
+- Use consistent file naming
+- Organize by feature rather than type
+- Separate concerns appropriately
+
+## Dependencies
+- Keep dependencies up to date
+- Use semantic versioning
+- Document why specific packages are needed
+- Avoid unnecessary dependencies
+
+## Environment
+- Use environment variables for configuration
+- Never commit sensitive data
+- Use different configurations for different environments
+- Document required environment variables 
