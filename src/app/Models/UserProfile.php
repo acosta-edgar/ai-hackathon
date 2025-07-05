@@ -40,9 +40,9 @@ class UserProfile extends Model
         'is_active' => 'boolean',
     ];
 
-    public function jobMatches(): HasMany
+    public function postMatches(): HasMany
     {
-        return $this->hasMany(JobMatch::class);
+        return $this->hasMany(PostMatch::class);
     }
 
     public function searchCriteria(): HasMany

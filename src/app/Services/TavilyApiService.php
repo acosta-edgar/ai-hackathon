@@ -52,68 +52,68 @@ class TavilyApiService
     }
 
     /**
-     * Search for jobs based on the given parameters.
+     * Search for posts based on the given parameters.
      *
      * @param  array  $params
      * @return array
      * @throws \Exception
      */
-    public function searchJobs(array $params): array
+    public function searchPosts(array $params): array
     {
         $defaultParams = [
             'query' => '',
             'location' => '',
             'page' => 1,
             'limit' => 10,
-            'job_type' => '',
+            'post_type' => '',
             'date_posted' => 'month', // day, 3days, week, month, anytime
             'sort_by' => 'relevance', // relevance, date
             'radius' => 25, // in miles
-            'include_company_jobs' => false,
+            'include_company_posts' => false,
         ];
 
         $searchParams = array_merge($defaultParams, $params);
         
         try {
-            $response = $this->client->post('/jobs/search', [
+            $response = $this->client->post('/posts/search', [
                 'json' => [
                     'api_key' => $this->apiKey,
                     'query' => $searchParams['query'],
                     'location' => $searchParams['location'],
                     'page' => $searchParams['page'],
                     'limit' => $searchParams['limit'],
-                    'job_type' => $searchParams['job_type'],
+                    'post_type' => $searchParams['post_type'],
                     'date_posted' => $searchParams['date_posted'],
                     'sort_by' => $searchParams['sort_by'],
                     'radius' => $searchParams['radius'],
-                    'include_company_jobs' => $searchParams['include_company_jobs'],
+                    'include_company_posts' => $searchParams['include_company_posts'],
                 ]
             ]);
 
             $data = json_decode($response->getBody()->getContents(), true);
 
-            return $this->formatJobResults($data);
+            return $this->formatPostResults($data);
         } catch (GuzzleException $e) {
             Log::error('Tavily API Error: ' . $e->getMessage(), [
                 'exception' => $e,
                 'params' => $searchParams,
             ]);
             
-            throw new \Exception('Failed to fetch jobs from Tavily API: ' . $e->getMessage(), $e->getCode(), $e);
+            throw new \Exception('Failed to fetch posts from Tavily API: ' . $e->getMessage(), $e->getCode(), $e);
         }
     }
 
     /**
-     * Get job details by ID.
+     * Get post details by ID.
      *
-     * @param  string  $jobId
+     * @param  string  $postId
      * @return array
      * @throws \Exception
      */
-    public function getJobDetails(string $jobId): array
+    public function getPostDetails(string $postId): array
     {
         try {
-            $response = $this->client->get("/jobs/{$jobId}", [
+            $response = $this->client->get("/posts/{$postId}", [
                 'query' => [
                     'api_key' => $this->apiKey,
                 ]
@@ -123,93 +123,93 @@ class TavilyApiService
         } catch (GuzzleException $e) {
             Log::error('Tavily API Error: ' . $e->getMessage(), [
                 'exception' => $e,
-                'job_id' => $jobId,
+                'post_id' => $postId,
             ]);
             
-            throw new \Exception('Failed to fetch job details from Tavily API: ' . $e->getMessage(), $e->getCode(), $e);
+            throw new \Exception('Failed to fetch post details from Tavily API: ' . $e->getMessage(), $e->getCode(), $e);
         }
     }
 
     /**
-     * Format job results from Tavily API to a standardized format.
+     * Format post results from Tavily API to a standardized format.
      *
      * @param  array  $apiResponse
      * @return array
      */
-    protected function formatJobResults(array $apiResponse): array
+    protected function formatPostResults(array $apiResponse): array
     {
-        $formattedJobs = [];
+        $formattedPosts = [];
         
-        if (empty($apiResponse['jobs'])) {
+        if (empty($apiResponse['posts'])) {
             return [];
         }
 
-        foreach ($apiResponse['jobs'] as $job) {
-            $formattedJobs[] = [
-                'external_id' => $job['id'] ?? null,
-                'title' => $job['title'] ?? 'No Title',
-                'description' => $this->cleanHtml($job['description'] ?? ''),
-                'company_name' => $job['company'] ?? 'Unknown Company',
-                'company_website' => $job['company_url'] ?? null,
-                'company_logo_url' => $job['company_logo'] ?? null,
-                'location' => $job['location'] ?? 'Remote',
-                'is_remote' => $this->isRemoteJob($job),
-                'job_type' => $this->mapJobType($job['job_type'] ?? ''),
-                'salary_min' => $job['salary_min'] ?? null,
-                'salary_max' => $job['salary_max'] ?? null,
-                'salary_currency' => $job['salary_currency'] ?? 'USD',
-                'salary_period' => $this->mapSalaryPeriod($job['salary_period'] ?? ''),
-                'salary_is_estimate' => $job['salary_is_estimate'] ?? true,
-                'skills' => $job['skills'] ?? [],
-                'categories' => $job['categories'] ?? [],
-                'apply_url' => $job['apply_url'] ?? $job['url'] ?? null,
-                'job_url' => $job['url'] ?? null,
-                'posted_at' => $job['posted_date'] ?? null,
-                'expires_at' => $job['expiry_date'] ?? null,
+        foreach ($apiResponse['posts'] as $post) {
+            $formattedPosts[] = [
+                'external_id' => $post['id'] ?? null,
+                'title' => $post['title'] ?? 'No Title',
+                'description' => $this->cleanHtml($post['description'] ?? ''),
+                'company_name' => $post['company'] ?? 'Unknown Company',
+                'company_website' => $post['company_url'] ?? null,
+                'company_logo_url' => $post['company_logo'] ?? null,
+                'location' => $post['location'] ?? 'Remote',
+                'is_remote' => $this->isRemotePost($post),
+                'post_type' => $this->mapPostType($post['post_type'] ?? ''),
+                'salary_min' => $post['salary_min'] ?? null,
+                'salary_max' => $post['salary_max'] ?? null,
+                'salary_currency' => $post['salary_currency'] ?? 'USD',
+                'salary_period' => $this->mapSalaryPeriod($post['salary_period'] ?? ''),
+                'salary_is_estimate' => $post['salary_is_estimate'] ?? true,
+                'skills' => $post['skills'] ?? [],
+                'categories' => $post['categories'] ?? [],
+                'apply_url' => $post['apply_url'] ?? $post['url'] ?? null,
+                'post_url' => $post['url'] ?? null,
+                'posted_at' => $post['posted_date'] ?? null,
+                'expires_at' => $post['expiry_date'] ?? null,
                 'is_active' => true,
-                'raw_data' => $job,
+                'raw_data' => $post,
             ];
         }
 
         return [
-            'jobs' => $formattedJobs,
-            'total' => $apiResponse['total'] ?? count($formattedJobs),
+            'posts' => $formattedPosts,
+            'total' => $apiResponse['total'] ?? count($formattedPosts),
             'page' => $apiResponse['page'] ?? 1,
             'total_pages' => $apiResponse['total_pages'] ?? 1,
         ];
     }
 
     /**
-     * Check if the job is remote based on available data.
+     * Check if the post is remote based on available data.
      *
-     * @param  array  $job
+     * @param  array  $post
      * @return bool
      */
-    protected function isRemoteJob(array $job): bool
+    protected function isRemotePost(array $post): bool
     {
-        if (isset($job['is_remote'])) {
-            return (bool) $job['is_remote'];
+        if (isset($post['is_remote'])) {
+            return (bool) $post['is_remote'];
         }
 
-        $location = strtolower($job['location'] ?? '');
-        $title = strtolower($job['title'] ?? '');
+        $location = strtolower($post['location'] ?? '');
+        $title = strtolower($post['title'] ?? '');
         
         return str_contains($location, 'remote') || 
                str_contains($title, 'remote') ||
                str_contains($location, 'anywhere') ||
-               str_contains($job['description'] ?? '', 'work from home') ||
-               str_contains($job['description'] ?? '', 'remote work');
+               str_contains($post['description'] ?? '', 'work from home') ||
+               str_contains($post['description'] ?? '', 'remote work');
     }
 
     /**
-     * Map job type from Tavily to our standard format.
+     * Map post type from Tavily to our standard format.
      *
-     * @param  string  $jobType
+     * @param  string  $postType
      * @return string
      */
-    protected function mapJobType(string $jobType): string
+    protected function mapPostType(string $postType): string
     {
-        $jobType = strtolower(trim($jobType));
+        $postType = strtolower(trim($postType));
         
         $mapping = [
             'full-time' => 'full-time',
@@ -230,7 +230,7 @@ class TavilyApiService
             'per diem' => 'per-diem',
         ];
 
-        return $mapping[$jobType] ?? 'full-time';
+        return $mapping[$postType] ?? 'full-time';
     }
 
     /**
@@ -261,7 +261,7 @@ class TavilyApiService
     }
 
     /**
-     * Clean HTML from job descriptions.
+     * Clean HTML from post descriptions.
      *
      * @param  string  $html
      * @return string

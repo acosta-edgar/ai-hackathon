@@ -2,10 +2,10 @@
 
 namespace App\Http\Requests;
 
-use App\Models\JobMatch;
+use App\Models\PostMatch;
 use Illuminate\Validation\Rule;
 
-class JobMatchRequest extends ApiRequest
+class PostMatchRequest extends ApiRequest
 {
     /**
      * Get the validation rules that apply to the request.
@@ -16,7 +16,7 @@ class JobMatchRequest extends ApiRequest
     {
         $rules = [
             'user_profile_id' => 'required|exists:user_profiles,id',
-            'job_id' => 'required|exists:jobs,id',
+            'post_id' => 'required|exists:posts,id',
             'search_criteria_id' => 'nullable|exists:search_criteria,id',
             'overall_score' => 'required|integer|min:0|max:100',
             'skills_score' => 'nullable|integer|min:0|max:100',
@@ -40,26 +40,26 @@ class JobMatchRequest extends ApiRequest
             'status' => [
                 'nullable',
                 Rule::in([
-                    JobMatch::STATUS_NEW,
-                    JobMatch::STATUS_VIEWED,
-                    JobMatch::STATUS_APPLIED,
-                    JobMatch::STATUS_INTERVIEW,
-                    JobMatch::STATUS_OFFER,
-                    JobMatch::STATUS_REJECTED,
-                    JobMatch::STATUS_CLOSED,
+                    PostMatch::STATUS_NEW,
+                    PostMatch::STATUS_VIEWED,
+                    PostMatch::STATUS_APPLIED,
+                    PostMatch::STATUS_INTERVIEW,
+                    PostMatch::STATUS_OFFER,
+                    PostMatch::STATUS_REJECTED,
+                    PostMatch::STATUS_CLOSED,
                 ]),
             ],
             'status_history' => 'nullable|array',
             'status_history.*.status' => [
                 'required',
                 Rule::in([
-                    JobMatch::STATUS_NEW,
-                    JobMatch::STATUS_VIEWED,
-                    JobMatch::STATUS_APPLIED,
-                    JobMatch::STATUS_INTERVIEW,
-                    JobMatch::STATUS_OFFER,
-                    JobMatch::STATUS_REJECTED,
-                    JobMatch::STATUS_CLOSED,
+                    PostMatch::STATUS_NEW,
+                    PostMatch::STATUS_VIEWED,
+                    PostMatch::STATUS_APPLIED,
+                    PostMatch::STATUS_INTERVIEW,
+                    PostMatch::STATUS_OFFER,
+                    PostMatch::STATUS_REJECTED,
+                    PostMatch::STATUS_CLOSED,
                 ]),
             ],
             'status_history.*.changed_at' => 'required|date',
@@ -72,7 +72,7 @@ class JobMatchRequest extends ApiRequest
         if ($this->isMethod('PATCH') || $this->isMethod('PUT')) {
             $optionalRules = [];
             foreach ($rules as $field => $rule) {
-                if ($field === 'user_profile_id' || $field === 'job_id') {
+                if ($field === 'user_profile_id' || $field === 'post_id') {
                     $optionalRules[$field] = 'sometimes|' . $rule;
                 } elseif (!in_array('required', explode('|', $rule))) {
                     $optionalRules[$field] = 'sometimes|' . $rule;
@@ -97,8 +97,8 @@ class JobMatchRequest extends ApiRequest
         $validator->after(function ($validator) {
             // Ensure at most one of is_interested or is_not_interested is true
             if ($this->is_interested && $this->is_not_interested) {
-                $validator->errors()->add('is_interested', 'A job cannot be both interested and not interested.');
-                $validator->errors()->add('is_not_interested', 'A job cannot be both interested and not interested.');
+                $validator->errors()->add('is_interested', 'A post cannot be both interested and not interested.');
+                $validator->errors()->add('is_not_interested', 'A post cannot be both interested and not interested.');
             }
 
             // Validate status_history format if provided
@@ -113,14 +113,14 @@ class JobMatchRequest extends ApiRequest
                 }
             }
 
-            // Check for duplicate job match
+            // Check for duplicate post match
             if ($this->isMethod('POST')) {
-                $exists = \App\Models\JobMatch::where('user_profile_id', $this->user_profile_id)
-                    ->where('job_id', $this->job_id)
+                $exists = \App\Models\PostMatch::where('user_profile_id', $this->user_profile_id)
+                    ->where('post_id', $this->post_id)
                     ->exists();
 
                 if ($exists) {
-                    $validator->errors()->add('job_id', 'A job match already exists for this user and job.');
+                    $validator->errors()->add('post_id', 'A post match already exists for this user and post.');
                 }
             }
         });

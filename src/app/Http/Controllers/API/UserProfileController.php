@@ -119,7 +119,7 @@ class UserProfileController extends Controller
     }
 
     /**
-     * Generate a customized resume based on a job description.
+     * Generate a customized resume based on a post description.
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
@@ -130,7 +130,7 @@ class UserProfileController extends Controller
 
         $validator = Validator::make($input, [
             'profile_id' => 'required|exists:user_profiles,id',
-            'job_description' => 'required|string',
+            'post_description' => 'required|string',
             'format' => 'nullable|in:pdf,docx,txt,md',
         ]);
 
@@ -145,11 +145,11 @@ class UserProfileController extends Controller
         $customizedResume = [
             'profile_id' => $profile->id,
             'format' => $input['format'] ?? 'pdf',
-            'content' => 'Customized resume content based on job description',
+            'content' => 'Customized resume content based on post description',
             'suggested_changes' => [
                 'Highlighted relevant skills',
                 'Reordered experience sections',
-                'Added keywords from job description'
+                'Added keywords from post description'
             ]
         ];
 

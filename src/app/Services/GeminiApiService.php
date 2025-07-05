@@ -216,14 +216,14 @@ class GeminiApiService
     /**
      * Generate a cover letter.
      *
-     * @param  string  $jobDescription
+     * @param  string  $postDescription
      * @param  array   $userProfile
      * @param  array   $options
      * @return string
      * @throws \Exception
      */
     public function generateCoverLetter(
-        string $jobDescription,
+        string $postDescription,
         array $userProfile,
         array $options = []
     ): string {
@@ -238,7 +238,7 @@ class GeminiApiService
         $options = array_merge($defaultOptions, $options);
 
         $prompt = $this->buildCoverLetterPrompt(
-            $jobDescription,
+            $postDescription,
             $userProfile,
             $options
         );
@@ -249,13 +249,13 @@ class GeminiApiService
     /**
      * Build the cover letter prompt.
      *
-     * @param  string  $jobDescription
+     * @param  string  $postDescription
      * @param  array   $userProfile
      * @param  array   $options
      * @return string
      */
     protected function buildCoverLetterPrompt(
-        string $jobDescription,
+        string $postDescription,
         array $userProfile,
         array $options
     ): string {
@@ -263,18 +263,18 @@ class GeminiApiService
         $lengthInstruction = $this->getLengthInstruction($options['length']);
         
         $skillsInstruction = $options['highlight_skills'] 
-            ? "Highlight the most relevant skills from my profile that match the job requirements." 
+            ? "Highlight the most relevant skills from my profile that match the post requirements." 
             : "";
             
         $salaryInstruction = $options['include_salary_expectations']
-            ? "Include salary expectations based on my experience and the job's requirements."
-            : "Do not mention salary expectations unless specifically asked in the job description.";
+            ? "Include salary expectations based on my experience and the post's requirements."
+            : "Do not mention salary expectations unless specifically asked in the post description.";
 
         return <<<PROMPT
-        Write a {$options['tone']} cover letter based on the following job description and my profile.
+        Write a {$options['tone']} cover letter based on the following post description and my profile.
         
-        Job Description:
-        {$jobDescription}
+        Post Description:
+        {$postDescription}
         
         My Profile:
         - Name: {$userProfile['name']}
@@ -288,7 +288,7 @@ class GeminiApiService
         - {$lengthInstruction}
         - {$skillsInstruction}
         - {$salaryInstruction}
-        - Focus on how my skills and experience align with the job requirements.
+        - Focus on how my skills and experience align with the post requirements.
         - Use a professional business letter format.
         - Do not include any placeholders - generate complete content.
         - {$options['custom_instructions']}
@@ -298,20 +298,20 @@ class GeminiApiService
     }
 
     /**
-     * Analyze job match.
+     * Analyze post match.
      *
-     * @param  array  $job
+     * @param  array  $post
      * @param  array  $userProfile
      * @param  array  $searchCriteria
      * @return array
      * @throws \Exception
      */
-    public function analyzeJobMatch(
-        array $job,
+    public function analyzePostMatch(
+        array $post,
         array $userProfile,
         array $searchCriteria = []
     ): array {
-        $prompt = $this->buildMatchAnalysisPrompt($job, $userProfile, $searchCriteria);
+        $prompt = $this->buildMatchAnalysisPrompt($post, $userProfile, $searchCriteria);
         
         // Update generation config for more structured output
         $this->generationConfig->setTemperature(0.1);
@@ -325,29 +325,29 @@ class GeminiApiService
     }
 
     /**
-     * Build the job match analysis prompt.
+     * Build the post match analysis prompt.
      *
-     * @param  array  $job
+     * @param  array  $post
      * @param  array  $userProfile
      * @param  array  $searchCriteria
      * @return string
      */
     protected function buildMatchAnalysisPrompt(
-        array $job,
+        array $post,
         array $userProfile,
         array $searchCriteria = []
     ): string {
         return <<<PROMPT
-        Analyze the match between the following job and candidate profile.
+        Analyze the match between the following post and candidate profile.
         
-        Job Details:
-        - Title: {$job['title']}
-        - Company: {$job['company_name']}
-        - Location: {$job['location']}
-        - Job Type: {$job['job_type'] ?? 'Not specified'}
-        - Experience Level: {$job['experience_level'] ?? 'Not specified'}
-        - Skills: {$this->formatSkills($job['skills'] ?? [])}
-        - Description: {$job['description']}
+        Post Details:
+        - Title: {$post['title']}
+        - Company: {$post['company_name']}
+        - Location: {$post['location']}
+        - Post Type: {$post['post_type'] ?? 'Not specified'}
+        - Experience Level: {$post['experience_level'] ?? 'Not specified'}
+        - Skills: {$this->formatSkills($post['skills'] ?? [])}
+        - Description: {$post['description']}
         
         Candidate Profile:
         - Name: {$userProfile['name']}
@@ -359,7 +359,7 @@ class GeminiApiService
         Search Criteria (if applicable):
         - Keywords: {$this->formatArray($searchCriteria['keywords'] ?? [])}
         - Locations: {$this->formatArray($searchCriteria['locations'] ?? [])}
-        - Job Types: {$this->formatArray($searchCriteria['job_types'] ?? [])}
+        - Post Types: {$this->formatArray($searchCriteria['post_types'] ?? [])}
         - Experience Levels: {$this->formatArray($searchCriteria['experience_levels'] ?? [])}
         
         Please provide a detailed analysis including:

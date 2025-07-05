@@ -1,10 +1,10 @@
 <?php
 
 use App\Http\Controllers\API\UserProfileController;
-use App\Http\Controllers\API\JobBoardController;
+use App\Http\Controllers\API\PostBoardController;
 use App\Http\Controllers\API\SearchCriteriaController;
-use App\Http\Controllers\API\JobController;
-use App\Http\Controllers\API\JobMatchController;
+use App\Http\Controllers\API\PostController;
+use App\Http\Controllers\API\PostMatchController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -22,42 +22,42 @@ use Illuminate\Support\Facades\Route;
 // User Profile Routes
 Route::apiResource('user-profiles', UserProfileController::class);
 
-// Job Board Routes
-Route::apiResource('job-boards', JobBoardController::class);
+// Post Board Routes
+Route::apiResource('post-boards', PostBoardController::class);
 
 // Search Criteria Routes
 Route::apiResource('search-criteria', SearchCriteriaController::class);
 
-// Job Routes
-Route::apiResource('jobs', JobController::class);
+// Post Routes
+Route::apiResource('posts', PostController::class);
 
-// Job Match Routes
-Route::apiResource('job-matches', JobMatchController::class);
+// Post Match Routes
+Route::apiResource('post-matches', PostMatchController::class);
 
-// Custom Job Match Actions
-Route::prefix('job-matches/{jobMatch}')->group(function () {
-    Route::post('/view', [JobMatchController::class, 'markAsViewed']);
-    Route::post('/apply', [JobMatchController::class, 'markAsApplied']);
-    Route::post('/reject', [JobMatchController::class, 'markAsRejected']);
-    Route::post('/interested', [JobMatchController::class, 'markAsInterested']);
-    Route::post('/not-interested', [JobMatchController::class, 'markAsNotInterested']);
+// Custom Post Match Actions
+Route::prefix('post-matches/{postMatch}')->group(function () {
+    Route::post('/view', [PostMatchController::class, 'markAsViewed']);
+    Route::post('/apply', [PostMatchController::class, 'markAsApplied']);
+    Route::post('/reject', [PostMatchController::class, 'markAsRejected']);
+    Route::post('/interested', [PostMatchController::class, 'markAsInterested']);
+    Route::post('/not-interested', [PostMatchController::class, 'markAsNotInterested']);
 });
 
-// Custom Job Actions
-Route::prefix('jobs')->group(function () {
-    Route::get('/search', [JobController::class, 'search']);
-    Route::post('/{job}/scrape', [JobController::class, 'scrapeDetails']);
+// Custom Post Actions
+Route::prefix('posts')->group(function () {
+    Route::get('/search', [PostController::class, 'search']);
+    Route::post('/{post}/scrape', [PostController::class, 'scrapeDetails']);
 });
 
-// Job Matching
+// Post Matching
 Route::prefix('matching')->group(function () {
-    Route::post('/match-jobs', [JobMatchController::class, 'matchJobs']);
-    Route::get('/suggestions', [JobMatchController::class, 'getSuggestions']);
+    Route::post('/match-posts', [PostMatchController::class, 'matchPosts']);
+    Route::get('/suggestions', [PostMatchController::class, 'getSuggestions']);
 });
 
 // AI Features
 Route::prefix('ai')->group(function () {
-    Route::post('/generate-cover-letter', [JobMatchController::class, 'generateCoverLetter']);
+    Route::post('/generate-cover-letter', [PostMatchController::class, 'generateCoverLetter']);
     Route::post('/customize-resume', [UserProfileController::class, 'customizeResume']);
-    Route::post('/analyze-match', [JobMatchController::class, 'analyzeMatch']);
+    Route::post('/analyze-match', [PostMatchController::class, 'analyzeMatch']);
 });

@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Models\Job;
-use App\Models\JobBoard;
+use App\Models\Post;
+use App\Models\PostBoard;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 
-class JobController extends Controller
+class PostController extends Controller
 {
     /**
      * Display a listing of the resource with optional filters.
@@ -18,7 +18,7 @@ class JobController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Job::query();
+        $query = Post::query();
         
         // Apply filters
         if ($request->has('title')) {
@@ -37,8 +37,8 @@ class JobController extends Controller
             $query->where('is_remote', $request->boolean('is_remote'));
         }
         
-        if ($request->has('job_type')) {
-            $query->where('job_type', $request->job_type);
+        if ($request->has('post_type')) {
+            $query->where('post_type', $request->post_type);
         }
         
         if ($request->has('min_salary')) {
@@ -59,9 +59,9 @@ class JobController extends Controller
         $sortOrder = $request->get('sort_order', 'desc');
         $query->orderBy($sortField, $sortOrder);
         
-        $jobs = $query->with('jobBoard')->paginate($request->get('per_page', 15));
+        $posts = $query->with('postBoard')->paginate($request->get('per_page', 15));
         
-        return $this->sendPaginatedResponse($jobs, 'Jobs retrieved successfully');
+        return $this->sendPaginatedResponse($posts, 'Posts retrieved successfully');
     }
 
     /**
@@ -75,7 +75,7 @@ class JobController extends Controller
         $input = $request->all();
 
         $validator = Validator::make($input, [
-            'job_board_id' => 'required|exists:job_boards,id',
+            'post_board_id' => 'required|exists:post_boards,id',
             'external_id' => 'required|string|max:255',
             'title' => 'required|string|max:255',
             'description' => 'required|string',
@@ -83,7 +83,7 @@ class JobController extends Controller
             'company_website' => 'nullable|url',
             'location' => 'required|string|max:255',
             'is_remote' => 'boolean',
-            'job_type' => 'nullable|string|max:100',
+            'post_type' => 'nullable|string|max:100',
             'experience_level' => 'nullable|string|max:100',
             'salary_min' => 'nullable|numeric|min:0',
             'salary_max' => 'nullable|numeric|min:0',
@@ -92,7 +92,7 @@ class JobController extends Controller
             'skills' => 'nullable|array',
             'categories' => 'nullable|array',
             'apply_url' => 'nullable|url',
-            'job_url' => 'required|url',
+            'post_url' => 'required|url',
             'posted_at' => 'nullable|date',
             'expires_at' => 'nullable|date|after:posted_at',
             'is_active' => 'boolean',
@@ -103,18 +103,18 @@ class JobController extends Controller
             return $this->sendError('Validation Error', $validator->errors(), 422);
         }
 
-        // Check for duplicate external_id for the same job board
-        $existingJob = Job::where('job_board_id', $input['job_board_id'])
+        // Check for duplicate external_id for the same post board
+        $existingPost = Post::where('post_board_id', $input['post_board_id'])
             ->where('external_id', $input['external_id'])
             ->first();
 
-        if ($existingJob) {
-            return $this->sendError('Job with this external ID already exists for the specified job board', [], 409);
+        if ($existingPost) {
+            return $this->sendError('Post with this external ID already exists for the specified post board', [], 409);
         }
 
-        $job = Job::create($input);
+        $post = Post::create($input);
 
-        return $this->sendResponse($job, 'Job created successfully', 201);
+        return $this->sendResponse($post, 'Post created successfully', 201);
     }
 
     /**
@@ -125,13 +125,13 @@ class JobController extends Controller
      */
     public function show($id)
     {
-        $job = Job::with('jobBoard')->find($id);
+        $post = Post::with('postBoard')->find($id);
 
-        if (is_null($job)) {
-            return $this->sendError('Job not found');
+        if (is_null($post)) {
+            return $this->sendError('Post not found');
         }
 
-        return $this->sendResponse($job, 'Job retrieved successfully');
+        return $this->sendResponse($post, 'Post retrieved successfully');
     }
 
     /**
@@ -143,10 +143,10 @@ class JobController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $job = Job::find($id);
+        $post = Post::find($id);
 
-        if (is_null($job)) {
-            return $this->sendError('Job not found');
+        if (is_null($post)) {
+            return $this->sendError('Post not found');
         }
 
         $input = $request->all();
@@ -158,7 +158,7 @@ class JobController extends Controller
             'company_website' => 'nullable|url',
             'location' => 'sometimes|required|string|max:255',
             'is_remote' => 'boolean',
-            'job_type' => 'nullable|string|max:100',
+            'post_type' => 'nullable|string|max:100',
             'experience_level' => 'nullable|string|max:100',
             'salary_min' => 'nullable|numeric|min:0',
             'salary_max' => 'nullable|numeric|min:0',
@@ -167,7 +167,7 @@ class JobController extends Controller
             'skills' => 'nullable|array',
             'categories' => 'nullable|array',
             'apply_url' => 'nullable|url',
-            'job_url' => 'sometimes|required|url',
+            'post_url' => 'sometimes|required|url',
             'posted_at' => 'nullable|date',
             'expires_at' => 'nullable|date|after:posted_at',
             'is_active' => 'boolean',
@@ -178,9 +178,9 @@ class JobController extends Controller
             return $this->sendError('Validation Error', $validator->errors(), 422);
         }
 
-        $job->update($input);
+        $post->update($input);
 
-        return $this->sendResponse($job, 'Job updated successfully');
+        return $this->sendResponse($post, 'Post updated successfully');
     }
 
     /**
@@ -191,19 +191,19 @@ class JobController extends Controller
      */
     public function destroy($id)
     {
-        $job = Job::find($id);
+        $post = Post::find($id);
 
-        if (is_null($job)) {
-            return $this->sendError('Job not found');
+        if (is_null($post)) {
+            return $this->sendError('Post not found');
         }
 
-        $job->delete();
+        $post->delete();
 
-        return $this->sendResponse([], 'Job deleted successfully');
+        return $this->sendResponse([], 'Post deleted successfully');
     }
 
     /**
-     * Search for jobs based on search criteria.
+     * Search for posts based on search criteria.
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
@@ -214,7 +214,7 @@ class JobController extends Controller
             'keywords' => 'nullable|array',
             'keywords.*' => 'string',
             'location' => 'nullable|string',
-            'job_type' => 'nullable|string',
+            'post_type' => 'nullable|string',
             'experience_level' => 'nullable|string',
             'min_salary' => 'nullable|numeric',
             'max_salary' => 'nullable|numeric',
@@ -227,7 +227,7 @@ class JobController extends Controller
             return $this->sendError('Validation Error', $validator->errors(), 422);
         }
 
-        $query = Job::query();
+        $query = Post::query();
 
         // Apply keyword search
         if ($request->has('keywords')) {
@@ -246,9 +246,9 @@ class JobController extends Controller
             $query->where('location', 'like', "%{$request->location}%");
         }
 
-        // Apply job type filter
-        if ($request->has('job_type')) {
-            $query->where('job_type', $request->job_type);
+        // Apply post type filter
+        if ($request->has('post_type')) {
+            $query->where('post_type', $request->post_type);
         }
 
         // Apply experience level filter
@@ -272,35 +272,35 @@ class JobController extends Controller
 
         // Pagination
         $perPage = $request->get('per_page', 15);
-        $jobs = $query->with('jobBoard')
+        $posts = $query->with('postBoard')
             ->orderBy('posted_at', 'desc')
             ->paginate($perPage);
 
-        return $this->sendPaginatedResponse($jobs, 'Jobs retrieved successfully');
+        return $this->sendPaginatedResponse($posts, 'Posts retrieved successfully');
     }
 
     /**
-     * Scrape job details from the original URL.
+     * Scrape post details from the original URL.
      *
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function scrapeDetails($id)
     {
-        $job = Job::find($id);
+        $post = Post::find($id);
 
-        if (is_null($job)) {
-            return $this->sendError('Job not found');
+        if (is_null($post)) {
+            return $this->sendError('Post not found');
         }
 
-        // TODO: Implement job details scraping logic using Tavily API
+        // TODO: Implement post details scraping logic using Tavily API
         // This is a placeholder for the actual implementation
         $scrapedData = [
-            'job_id' => $job->id,
+            'post_id' => $post->id,
             'details_updated' => false,
-            'message' => 'Job details scraping not implemented yet',
+            'message' => 'Post details scraping not implemented yet',
         ];
 
-        return $this->sendResponse($scrapedData, 'Job details scraping completed');
+        return $this->sendResponse($scrapedData, 'Post details scraping completed');
     }
 }

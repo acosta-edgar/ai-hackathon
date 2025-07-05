@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Validation\Rule;
 
-class JobBoardRequest extends ApiRequest
+class PostBoardRequest extends ApiRequest
 {
     /**
      * Get the validation rules that apply to the request.
@@ -26,7 +26,7 @@ class JobBoardRequest extends ApiRequest
             'search_parameters' => 'nullable|array',
             'search_parameters.keywords_param' => 'nullable|string|max:50',
             'search_parameters.location_param' => 'nullable|string|max:50',
-            'search_parameters.job_type_param' => 'nullable|string|max:50',
+            'search_parameters.post_type_param' => 'nullable|string|max:50',
             'search_parameters.page_param' => 'nullable|string|max:50',
             'search_parameters.per_page_param' => 'nullable|string|max:50',
             'search_parameters.sort_param' => 'nullable|string|max:50',

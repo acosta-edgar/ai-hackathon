@@ -13,15 +13,15 @@ return new class extends Migration
     {
         Schema::create('posts', function (Blueprint $table) {
             $table->id();
-            $table->string('external_id')->unique()->comment('External ID from the job board');
-            $table->foreignId('job_board_id')->constrained()->onDelete('cascade');
+            $table->string('external_id')->unique()->comment('External ID from the post board');
+            $table->foreignId('post_board_id')->constrained()->onDelete('cascade');
             $table->string('title');
             $table->text('description');
             $table->string('company_name');
             $table->string('company_website')->nullable();
             $table->string('location')->nullable();
             $table->boolean('is_remote')->default(false);
-            $table->string('job_type')->nullable(); // full-time, part-time, contract, etc.
+            $table->string('post_type')->nullable(); // full-time, part-time, contract, etc.
             $table->string('experience_level')->nullable(); // entry, mid, senior, executive
             $table->decimal('salary_min', 12, 2)->nullable();
             $table->decimal('salary_max', 12, 2)->nullable();
@@ -30,20 +30,20 @@ return new class extends Migration
             $table->json('skills')->nullable();
             $table->json('categories')->nullable();
             $table->string('apply_url');
-            $table->string('job_url');
+            $table->string('post_url');
             $table->timestamp('posted_at')->nullable();
             $table->timestamp('expires_at')->nullable();
             $table->boolean('is_active')->default(true);
-            $table->json('raw_data')->nullable(); // Raw data from the job board
+            $table->json('raw_data')->nullable(); // Raw data from the post board
             $table->timestamps();
             $table->softDeletes();
             
             // Indexes for better query performance
-            $table->index(['job_board_id', 'is_active']);
+            $table->index(['post_board_id', 'is_active']);
             $table->index('title');
             $table->index('company_name');
             $table->index('is_remote');
-            $table->index('job_type');
+            $table->index('post_type');
             $table->index('experience_level');
             $table->index('posted_at');
         });

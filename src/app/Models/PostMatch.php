@@ -6,13 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class JobMatch extends Model
+class PostMatch extends Model
 {
     use SoftDeletes;
 
     protected $fillable = [
         'user_profile_id',
-        'job_id',
+        'post_id',
         'search_criteria_id',
         'overall_score',
         'skills_score',
@@ -68,9 +68,9 @@ class JobMatch extends Model
         return $this->belongsTo(UserProfile::class);
     }
 
-    public function job(): BelongsTo
+    public function post(): BelongsTo
     {
-        return $this->belongsTo(Job::class);
+        return $this->belongsTo(Post::class);
     }
 
     public function searchCriteria(): BelongsTo

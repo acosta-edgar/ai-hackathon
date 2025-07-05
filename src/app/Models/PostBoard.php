@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class JobBoard extends Model
+class PostBoard extends Model
 {
     use SoftDeletes;
 
@@ -32,8 +32,8 @@ class JobBoard extends Model
         'last_searched_at' => 'datetime',
     ];
 
-    public function jobs(): HasMany
+    public function posts(): HasMany
     {
-        return $this->hasMany(Job::class);
+        return $this->hasMany(Post::class);
     }
 }

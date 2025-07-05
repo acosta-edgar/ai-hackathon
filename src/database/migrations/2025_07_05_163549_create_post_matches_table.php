@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('job_matches', function (Blueprint $table) {
+        Schema::create('post_matches', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_profile_id')->constrained('user_profiles')->onDelete('cascade');
             $table->foreignId('post_id')->constrained()->onDelete('cascade');
@@ -27,8 +27,8 @@ return new class extends Migration
             // Match details
             $table->json('strengths')->nullable(); // Array of strengths in the match
             $table->json('weaknesses')->nullable(); // Array of weaknesses in the match
-            $table->json('missing_skills')->nullable(); // Skills from the job that are missing from the profile
-            $table->json('matching_skills')->nullable(); // Skills that match between the job and profile
+            $table->json('missing_skills')->nullable(); // Skills from the post that are missing from the profile
+            $table->json('matching_skills')->nullable(); // Skills that match between the post and profile
             
             // AI Analysis
             $table->text('match_summary')->nullable(); // AI-generated summary of the match
@@ -40,7 +40,7 @@ return new class extends Migration
             $table->boolean('is_not_interested')->default(false); // User is not interested
             $table->text('user_notes')->nullable(); // User's personal notes about this match
             $table->timestamp('viewed_at')->nullable(); // When the user viewed this match
-            $table->timestamp('applied_at')->nullable(); // When the user applied for this job
+            $table->timestamp('applied_at')->nullable(); // When the user applied for this post
             $table->timestamp('rejected_at')->nullable(); // When the user was rejected
             
             // Status tracking
@@ -58,7 +58,7 @@ return new class extends Migration
             $table->index('is_not_interested');
             $table->index('applied_at');
             
-            // Ensure one match per user-profile-job combination
+            // Ensure one match per user-profile-post combination
             $table->unique(['user_profile_id', 'post_id']);
         });
     }
@@ -68,6 +68,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('job_matches');
+        Schema::dropIfExists('post_matches');
     }
 };

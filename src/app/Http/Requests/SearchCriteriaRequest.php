@@ -17,11 +17,11 @@ class SearchCriteriaRequest extends ApiRequest
             'user_profile_id' => 'required|exists:user_profiles,id',
             'name' => 'required|string|max:255',
             'is_default' => 'boolean',
-            'keywords' => 'required_without_all:job_titles,companies,skills_included|nullable|array|min:1',
+            'keywords' => 'required_without_all:post_titles,companies,skills_included|nullable|array|min:1',
             'keywords.*' => 'string|max:100',
             'locations' => 'nullable|array',
             'locations.*' => 'string|max:255',
-            'job_type' => 'nullable|string|in:full-time,part-time,contract,temporary,internship,volunteer,per-diem',
+            'post_type' => 'nullable|string|in:full-time,part-time,contract,temporary,internship,volunteer,per-diem',
             'experience_level' => 'nullable|string|in:internship,entry,associate,mid-senior,senior,director,executive',
             'min_salary' => 'nullable|numeric|min:0',
             'max_salary' => 'nullable|numeric|min:0|gt:min_salary',
@@ -31,8 +31,8 @@ class SearchCriteriaRequest extends ApiRequest
             'industries.*' => 'string|max:100',
             'companies' => 'nullable|array',
             'companies.*' => 'string|max:255',
-            'job_titles' => 'nullable|array',
-            'job_titles.*' => 'string|max:255',
+            'post_titles' => 'nullable|array',
+            'post_titles.*' => 'string|max:255',
             'skills_included' => 'nullable|array',
             'skills_included.*' => 'string|max:100',
             'skills_excluded' => 'nullable|array',
@@ -95,10 +95,10 @@ class SearchCriteriaRequest extends ApiRequest
     public function messages()
     {
         return [
-            'keywords.required_without_all' => 'At least one of keywords, job titles, companies, or skills must be provided.',
+            'keywords.required_without_all' => 'At least one of keywords, post titles, companies, or skills must be provided.',
             'salary_currency.required_with' => 'Currency is required when specifying a salary range.',
             'max_salary.gt' => 'Maximum salary must be greater than minimum salary.',
-            'days_posted.max' => 'Cannot search for jobs posted more than 90 days ago.',
+            'days_posted.max' => 'Cannot search for posts posted more than 90 days ago.',
         ];
     }
 }

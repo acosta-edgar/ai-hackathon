@@ -12,7 +12,7 @@ class Posts extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'job_board_id',
+        'post_board_id',
         'external_id',
         'title',
         'description',
@@ -20,7 +20,7 @@ class Posts extends Model
         'company_website',
         'location',
         'is_remote',
-        'job_type',
+        'post_type',
         'experience_level',
         'salary_min',
         'salary_max',
@@ -29,7 +29,7 @@ class Posts extends Model
         'skills',
         'categories',
         'apply_url',
-        'job_url',
+        'post_url',
         'posted_at',
         'expires_at',
         'is_active',
@@ -48,14 +48,14 @@ class Posts extends Model
         'raw_data' => 'array',
     ];
 
-    public function jobBoard(): BelongsTo
+    public function postBoard(): BelongsTo
     {
-        return $this->belongsTo(JobBoard::class);
+        return $this->belongsTo(PostBoard::class);
     }
 
-    public function jobMatches(): HasMany
+    public function postMatches(): HasMany
     {
-        return $this->hasMany(JobMatch::class);
+        return $this->hasMany(PostMatch::class);
     }
 
     public function getSalaryRangeAttribute(): ?string

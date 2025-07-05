@@ -2,15 +2,15 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Models\Job;
-use App\Models\JobMatch;
+use App\Models\Post;
+use App\Models\PostMatch;
 use App\Models\SearchCriteria;
 use App\Models\UserProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 
-class JobMatchController extends Controller
+class PostMatchController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -35,7 +35,7 @@ class JobMatchController extends Controller
             return $this->sendError('Validation Error', $validator->errors(), 422);
         }
 
-        $query = JobMatch::with(['job', 'searchCriteria'])
+        $query = PostMatch::with(['post', 'searchCriteria'])
             ->where('user_profile_id', $request->user_profile_id);
 
         // Apply filters
@@ -63,18 +63,18 @@ class JobMatchController extends Controller
         $sortBy = $request->get('sort_by', 'overall_score');
         $sortOrder = $request->get('sort_order', 'desc');
         
-        // Special handling for job fields
+        // Special handling for post fields
         if (in_array($sortBy, ['posted_at', 'title', 'company_name'])) {
-            $query->join('jobs', 'job_matches.job_id', '=', 'jobs.id')
-                ->orderBy("jobs.{$sortBy}", $sortOrder)
-                ->select('job_matches.*');
+            $query->join('posts', 'post_matches.post_id', '=', 'posts.id')
+                ->orderBy("posts.{$sortBy}", $sortOrder)
+                ->select('post_matches.*');
         } else {
             $query->orderBy($sortBy, $sortOrder);
         }
 
-        $jobMatches = $query->paginate($request->get('per_page', 15));
+        $postMatches = $query->paginate($request->get('per_page', 15));
 
-        return $this->sendPaginatedResponse($jobMatches, 'Job matches retrieved successfully');
+        return $this->sendPaginatedResponse($postMatches, 'Post matches retrieved successfully');
     }
 
     /**
@@ -89,7 +89,7 @@ class JobMatchController extends Controller
 
         $validator = Validator::make($input, [
             'user_profile_id' => 'required|exists:user_profiles,id',
-            'job_id' => 'required|exists:jobs,id',
+            'post_id' => 'required|exists:posts,id',
             'search_criteria_id' => 'nullable|exists:search_criteria,id',
             'overall_score' => 'required|integer|min:0|max:100',
             'skills_score' => 'nullable|integer|min:0|max:100',
@@ -109,25 +109,25 @@ class JobMatchController extends Controller
             return $this->sendError('Validation Error', $validator->errors(), 422);
         }
 
-        // Check if this job match already exists
-        $existingMatch = JobMatch::where('user_profile_id', $input['user_profile_id'])
-            ->where('job_id', $input['job_id'])
+        // Check if this post match already exists
+        $existingMatch = PostMatch::where('user_profile_id', $input['user_profile_id'])
+            ->where('post_id', $input['post_id'])
             ->first();
 
         if ($existingMatch) {
-            return $this->sendError('Job match already exists', [], 409);
+            return $this->sendError('Post match already exists', [], 409);
         }
 
         // Set default status
-        $input['status'] = JobMatch::STATUS_NEW;
+        $input['status'] = PostMatch::STATUS_NEW;
         $input['status_history'] = [[
-            'status' => JobMatch::STATUS_NEW,
+            'status' => PostMatch::STATUS_NEW,
             'changed_at' => now()->toDateTimeString(),
         ]];
 
-        $jobMatch = JobMatch::create($input);
+        $postMatch = PostMatch::create($input);
 
-        return $this->sendResponse($jobMatch, 'Job match created successfully', 201);
+        return $this->sendResponse($postMatch, 'Post match created successfully', 201);
     }
 
     /**
@@ -138,13 +138,13 @@ class JobMatchController extends Controller
      */
     public function show($id)
     {
-        $jobMatch = JobMatch::with(['job', 'userProfile', 'searchCriteria'])->find($id);
+        $postMatch = PostMatch::with(['post', 'userProfile', 'searchCriteria'])->find($id);
 
-        if (is_null($jobMatch)) {
-            return $this->sendError('Job match not found');
+        if (is_null($postMatch)) {
+            return $this->sendError('Post match not found');
         }
 
-        return $this->sendResponse($jobMatch, 'Job match retrieved successfully');
+        return $this->sendResponse($postMatch, 'Post match retrieved successfully');
     }
 
     /**
@@ -156,10 +156,10 @@ class JobMatchController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $jobMatch = JobMatch::find($id);
+        $postMatch = PostMatch::find($id);
 
-        if (is_null($jobMatch)) {
-            return $this->sendError('Job match not found');
+        if (is_null($postMatch)) {
+            return $this->sendError('Post match not found');
         }
 
         $input = $request->all();
@@ -186,8 +186,8 @@ class JobMatchController extends Controller
         }
 
         // Update status history if status is being changed
-        if (isset($input['status']) && $input['status'] !== $jobMatch->status) {
-            $statusHistory = $jobMatch->status_history ?? [];
+        if (isset($input['status']) && $input['status'] !== $postMatch->status) {
+            $statusHistory = $postMatch->status_history ?? [];
             $statusHistory[] = [
                 'status' => $input['status'],
                 'changed_at' => now()->toDateTimeString(),
@@ -195,9 +195,9 @@ class JobMatchController extends Controller
             $input['status_history'] = $statusHistory;
         }
 
-        $jobMatch->update($input);
+        $postMatch->update($input);
 
-        return $this->sendResponse($jobMatch, 'Job match updated successfully');
+        return $this->sendResponse($postMatch, 'Post match updated successfully');
     }
 
     /**
@@ -208,125 +208,125 @@ class JobMatchController extends Controller
      */
     public function destroy($id)
     {
-        $jobMatch = JobMatch::find($id);
+        $postMatch = PostMatch::find($id);
 
-        if (is_null($jobMatch)) {
-            return $this->sendError('Job match not found');
+        if (is_null($postMatch)) {
+            return $this->sendError('Post match not found');
         }
 
-        $jobMatch->delete();
+        $postMatch->delete();
 
-        return $this->sendResponse([], 'Job match deleted successfully');
+        return $this->sendResponse([], 'Post match deleted successfully');
     }
 
     /**
-     * Mark a job match as viewed.
+     * Mark a post match as viewed.
      *
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function markAsViewed($id)
     {
-        $jobMatch = JobMatch::find($id);
+        $postMatch = PostMatch::find($id);
 
-        if (is_null($jobMatch)) {
-            return $this->sendError('Job match not found');
+        if (is_null($postMatch)) {
+            return $this->sendError('Post match not found');
         }
 
-        $jobMatch->markAsViewed();
+        $postMatch->markAsViewed();
 
-        return $this->sendResponse($jobMatch, 'Job match marked as viewed');
+        return $this->sendResponse($postMatch, 'Post match marked as viewed');
     }
 
     /**
-     * Mark a job match as applied.
+     * Mark a post match as applied.
      *
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function markAsApplied($id)
     {
-        $jobMatch = JobMatch::find($id);
+        $postMatch = PostMatch::find($id);
 
-        if (is_null($jobMatch)) {
-            return $this->sendError('Job match not found');
+        if (is_null($postMatch)) {
+            return $this->sendError('Post match not found');
         }
 
-        $jobMatch->markAsApplied();
+        $postMatch->markAsApplied();
 
-        return $this->sendResponse($jobMatch, 'Job application recorded');
+        return $this->sendResponse($postMatch, 'Post application recorded');
     }
 
     /**
-     * Mark a job match as rejected.
+     * Mark a post match as rejected.
      *
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function markAsRejected($id)
     {
-        $jobMatch = JobMatch::find($id);
+        $postMatch = PostMatch::find($id);
 
-        if (is_null($jobMatch)) {
-            return $this->sendError('Job match not found');
+        if (is_null($postMatch)) {
+            return $this->sendError('Post match not found');
         }
 
-        $jobMatch->markAsRejected();
+        $postMatch->markAsRejected();
 
-        return $this->sendResponse($jobMatch, 'Job match marked as rejected');
+        return $this->sendResponse($postMatch, 'Post match marked as rejected');
     }
 
     /**
-     * Mark a job as interested.
+     * Mark a post as interested.
      *
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function markAsInterested($id)
     {
-        $jobMatch = JobMatch::find($id);
+        $postMatch = PostMatch::find($id);
 
-        if (is_null($jobMatch)) {
-            return $this->sendError('Job match not found');
+        if (is_null($postMatch)) {
+            return $this->sendError('Post match not found');
         }
 
-        $jobMatch->update([
+        $postMatch->update([
             'is_interested' => true,
             'is_not_interested' => false,
         ]);
 
-        return $this->sendResponse($jobMatch, 'Job marked as interested');
+        return $this->sendResponse($postMatch, 'Post marked as interested');
     }
 
     /**
-     * Mark a job as not interested.
+     * Mark a post as not interested.
      *
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function markAsNotInterested($id)
     {
-        $jobMatch = JobMatch::find($id);
+        $postMatch = PostMatch::find($id);
 
-        if (is_null($jobMatch)) {
-            return $this->sendError('Job match not found');
+        if (is_null($postMatch)) {
+            return $this->sendError('Post match not found');
         }
 
-        $jobMatch->update([
+        $postMatch->update([
             'is_interested' => false,
             'is_not_interested' => true,
         ]);
 
-        return $this->sendResponse($jobMatch, 'Job marked as not interested');
+        return $this->sendResponse($postMatch, 'Post marked as not interested');
     }
 
     /**
-     * Match jobs for a user profile based on search criteria.
+     * Match posts for a user profile based on search criteria.
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function matchJobs(Request $request)
+    public function matchPosts(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'user_profile_id' => 'required|exists:user_profiles,id',
@@ -350,21 +350,21 @@ class JobMatchController extends Controller
             return $this->sendError('No search criteria found');
         }
 
-        // TODO: Implement job matching algorithm
+        // TODO: Implement post matching algorithm
         // This is a placeholder for the actual implementation
-        $matchedJobs = [];
-        $message = 'Job matching not fully implemented yet';
+        $matchedPosts = [];
+        $message = 'Post matching not fully implemented yet';
 
         return $this->sendResponse([
             'user_profile_id' => $userProfile->id,
             'search_criteria_id' => $searchCriteria->id,
-            'matched_jobs_count' => count($matchedJobs),
-            'matched_jobs' => $matchedJobs,
+            'matched_posts_count' => count($matchedPosts),
+            'matched_posts' => $matchedPosts,
         ], $message);
     }
 
     /**
-     * Get job match suggestions for a user.
+     * Get post match suggestions for a user.
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
@@ -383,20 +383,20 @@ class JobMatchController extends Controller
         $limit = $request->get('limit', 5);
 
         // Get top matches that the user hasn't seen or interacted with yet
-        $suggestions = JobMatch::with(['job'])
+        $suggestions = PostMatch::with(['post'])
             ->where('user_profile_id', $request->user_profile_id)
             ->where('is_interested', false)
             ->where('is_not_interested', false)
-            ->whereNotIn('status', [JobMatch::STATUS_REJECTED, JobMatch::STATUS_CLOSED])
+            ->whereNotIn('status', [PostMatch::STATUS_REJECTED, PostMatch::STATUS_CLOSED])
             ->orderBy('overall_score', 'desc')
             ->limit($limit)
             ->get();
 
-        return $this->sendResponse($suggestions, 'Job suggestions retrieved successfully');
+        return $this->sendResponse($suggestions, 'Post suggestions retrieved successfully');
     }
 
     /**
-     * Generate a cover letter for a job match.
+     * Generate a cover letter for a post match.
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
@@ -404,7 +404,7 @@ class JobMatchController extends Controller
     public function generateCoverLetter(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'job_match_id' => 'required|exists:job_matches,id',
+            'post_match_id' => 'required|exists:post_matches,id',
             'tone' => 'nullable|in:formal,enthusiastic,professional,friendly',
             'length' => 'nullable|in:short,medium,long',
             'highlight_skills' => 'nullable|boolean',
@@ -416,20 +416,20 @@ class JobMatchController extends Controller
             return $this->sendError('Validation Error', $validator->errors(), 422);
         }
 
-        $jobMatch = JobMatch::with(['job', 'userProfile'])->find($request->job_match_id);
+        $postMatch = PostMatch::with(['post', 'userProfile'])->find($request->post_match_id);
 
-        if (is_null($jobMatch)) {
-            return $this->sendError('Job match not found');
+        if (is_null($postMatch)) {
+            return $this->sendError('Post match not found');
         }
 
         // TODO: Implement cover letter generation using Gemini API
         // This is a placeholder for the actual implementation
         $coverLetter = [
-            'job_match_id' => $jobMatch->id,
+            'post_match_id' => $postMatch->id,
             'content' => 'Generated cover letter content will appear here.',
             'tone' => $request->get('tone', 'professional'),
             'length' => $request->get('length', 'medium'),
-            'highlighted_skills' => $jobMatch->matching_skills ?? [],
+            'highlighted_skills' => $postMatch->matching_skills ?? [],
             'generated_at' => now()->toDateTimeString(),
         ];
 
@@ -437,7 +437,7 @@ class JobMatchController extends Controller
     }
 
     /**
-     * Analyze match between a user profile and a job.
+     * Analyze match between a user profile and a post.
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
@@ -446,7 +446,7 @@ class JobMatchController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'user_profile_id' => 'required|exists:user_profiles,id',
-            'job_id' => 'required|exists:jobs,id',
+            'post_id' => 'required|exists:posts,id',
             'search_criteria_id' => 'nullable|exists:search_criteria,id',
         ]);
 
@@ -455,7 +455,7 @@ class JobMatchController extends Controller
         }
 
         $userProfile = UserProfile::find($request->user_profile_id);
-        $job = Job::find($request->job_id);
+        $post = Post::find($request->post_id);
         $searchCriteria = $request->has('search_criteria_id')
             ? SearchCriteria::find($request->search_criteria_id)
             : null;
@@ -464,7 +464,7 @@ class JobMatchController extends Controller
         // This is a placeholder for the actual implementation
         $analysis = [
             'user_profile_id' => $userProfile->id,
-            'job_id' => $job->id,
+            'post_id' => $post->id,
             'overall_score' => rand(60, 95), // Random score for demo
             'skills_match' => [
                 'score' => rand(50, 100),

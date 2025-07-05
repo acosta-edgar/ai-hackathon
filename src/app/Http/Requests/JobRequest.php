@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Validation\Rule;
 
-class JobRequest extends ApiRequest
+class PostRequest extends ApiRequest
 {
     /**
      * Get the validation rules that apply to the request.
@@ -14,7 +14,7 @@ class JobRequest extends ApiRequest
     public function rules()
     {
         $rules = [
-            'job_board_id' => 'required|exists:job_boards,id',
+            'post_board_id' => 'required|exists:post_boards,id',
             'external_id' => 'required|string|max:255',
             'title' => 'required|string|max:255',
             'description' => 'required|string',
@@ -23,7 +23,7 @@ class JobRequest extends ApiRequest
             'company_logo_url' => 'nullable|url|max:255',
             'location' => 'required|string|max:255',
             'is_remote' => 'boolean',
-            'job_type' => 'nullable|string|in:full-time,part-time,contract,temporary,internship,volunteer,per-diem',
+            'post_type' => 'nullable|string|in:full-time,part-time,contract,temporary,internship,volunteer,per-diem',
             'experience_level' => 'nullable|string|in:internship,entry,associate,mid-senior,senior,director,executive',
             'salary_min' => 'nullable|numeric|min:0',
             'salary_max' => 'nullable|numeric|min:0|gt:salary_min',
@@ -35,7 +35,7 @@ class JobRequest extends ApiRequest
             'categories' => 'nullable|array',
             'categories.*' => 'string|max:100',
             'apply_url' => 'required|url|max:255',
-            'job_url' => 'required|url|max:255',
+            'post_url' => 'required|url|max:255',
             'posted_at' => 'nullable|date',
             'expires_at' => 'nullable|date|after:posted_at',
             'is_active' => 'boolean',
@@ -46,7 +46,7 @@ class JobRequest extends ApiRequest
         if ($this->isMethod('PATCH') || $this->isMethod('PUT')) {
             $optionalRules = [];
             foreach ($rules as $field => $rule) {
-                if ($field === 'job_board_id' || $field === 'external_id') {
+                if ($field === 'post_board_id' || $field === 'external_id') {
                     $optionalRules[$field] = 'sometimes|' . $rule;
                 } elseif (!in_array('required', explode('|', $rule)) && !str_contains($rule, 'required_with')) {
                     $optionalRules[$field] = 'sometimes|' . $rule;
@@ -74,17 +74,17 @@ class JobRequest extends ApiRequest
                 $validator->errors()->add('salary_max', 'Maximum salary must be greater than minimum salary.');
             }
 
-            // Check for duplicate external_id for the same job board
+            // Check for duplicate external_id for the same post board
             if ($this->isMethod('POST') || $this->isMethod('PUT') || $this->isMethod('PATCH')) {
-                $query = \App\Models\Job::where('job_board_id', $this->job_board_id)
+                $query = \App\Models\Post::where('post_board_id', $this->post_board_id)
                     ->where('external_id', $this->external_id);
 
-                if ($this->route('job')) {
-                    $query->where('id', '!=', $this->route('job'));
+                if ($this->route('post')) {
+                    $query->where('id', '!=', $this->route('post'));
                 }
 
                 if ($query->exists()) {
-                    $validator->errors()->add('external_id', 'A job with this external ID already exists for the specified job board.');
+                    $validator->errors()->add('external_id', 'A post with this external ID already exists for the specified post board.');
                 }
             }
         });
@@ -98,7 +98,7 @@ class JobRequest extends ApiRequest
     public function messages()
     {
         return [
-            'external_id.unique' => 'A job with this external ID already exists for the specified job board.',
+            'external_id.unique' => 'A post with this external ID already exists for the specified post board.',
             'salary_max.gt' => 'Maximum salary must be greater than minimum salary.',
             'expires_at.after' => 'Expiration date must be after the posted date.',
         ];

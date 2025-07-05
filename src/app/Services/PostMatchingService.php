@@ -2,11 +2,11 @@
 
 namespace App\Services;
 
-use App\Models\Job;
+use App\Models\Post;
 use App\Models\UserProfile;
 use Illuminate\Support\Facades\Log;
 
-class JobMatchingService
+class PostMatchingService
 {
     /**
      * The Gemini API service instance.
@@ -16,7 +16,7 @@ class JobMatchingService
     protected $geminiService;
 
     /**
-     * Create a new job matching service instance.
+     * Create a new post matching service instance.
      *
      * @param  \App\Services\GeminiApiService  $geminiService
      * @return void
@@ -27,96 +27,96 @@ class JobMatchingService
     }
 
     /**
-     * Match jobs to a user profile.
+     * Match posts to a user profile.
      *
      * @param  \App\Models\UserProfile  $userProfile
-     * @param  array  $jobs
+     * @param  array  $posts
      * @param  array  $searchCriteria
      * @return array
      */
-    public function matchJobs(UserProfile $userProfile, array $jobs, array $searchCriteria = []): array
+    public function matchPosts(UserProfile $userProfile, array $posts, array $searchCriteria = []): array
     {
-        $matchedJobs = [];
+        $matchedPosts = [];
 
-        foreach ($jobs as $job) {
+        foreach ($posts as $post) {
             try {
-                $matchResult = $this->matchJob($userProfile, $job, $searchCriteria);
-                $matchedJobs[] = [
-                    'job' => $job,
+                $matchResult = $this->matchPost($userProfile, $post, $searchCriteria);
+                $matchedPosts[] = [
+                    'post' => $post,
                     'match_result' => $matchResult,
                 ];
             } catch (\Exception $e) {
-                Log::error('Error matching job: ' . $e->getMessage(), [
-                    'job_id' => $job->id,
+                Log::error('Error matching post: ' . $e->getMessage(), [
+                    'post_id' => $post->id,
                     'user_profile_id' => $userProfile->id,
                     'exception' => $e,
                 ]);
 
-                // Skip this job if there was an error
+                // Skip this post if there was an error
                 continue;
             }
         }
 
-        // Sort jobs by match score (descending)
-        usort($matchedJobs, function ($a, $b) {
+        // Sort posts by match score (descending)
+        usort($matchedPosts, function ($a, $b) {
             return $b['match_result']['overall_score'] <=> $a['match_result']['overall_score'];
         });
 
-        return $matchedJobs;
+        return $matchedPosts;
     }
 
     /**
-     * Match a single job to a user profile.
+     * Match a single post to a user profile.
      *
      * @param  \App\Models\UserProfile  $userProfile
-     * @param  \App\Models\Job  $job
+     * @param  \App\Models\Post  $post
      * @param  array  $searchCriteria
      * @return array
      */
-    public function matchJob(UserProfile $userProfile, Job $job, array $searchCriteria = []): array
+    public function matchPost(UserProfile $userProfile, Post $post, array $searchCriteria = []): array
     {
         // Convert models to arrays for the Gemini API
-        $jobData = $this->formatJobData($job);
+        $postData = $this->formatPostData($post);
         $profileData = $this->formatUserProfileData($userProfile);
 
         // Get the match analysis from Gemini
-        $matchResult = $this->geminiService->analyzeJobMatch($jobData, $profileData, $searchCriteria);
+        $matchResult = $this->geminiService->analyzePostMatch($postData, $profileData, $searchCriteria);
 
         // Add additional metadata
         $matchResult['last_analyzed_at'] = now()->toDateTimeString();
-        $matchResult['job_id'] = $job->id;
+        $matchResult['post_id'] = $post->id;
         $matchResult['user_profile_id'] = $userProfile->id;
 
         return $matchResult;
     }
 
     /**
-     * Format job data for the matching service.
+     * Format post data for the matching service.
      *
-     * @param  \App\Models\Job  $job
+     * @param  \App\Models\Post  $post
      * @return array
      */
-    protected function formatJobData(Job $job): array
+    protected function formatPostData(Post $post): array
     {
         return [
-            'id' => $job->id,
-            'title' => $job->title,
-            'company_name' => $job->company_name,
-            'location' => $job->location,
-            'job_type' => $job->job_type,
-            'salary_min' => $job->salary_min,
-            'salary_max' => $job->salary_max,
-            'salary_currency' => $job->salary_currency,
-            'description' => $job->description,
-            'requirements' => $job->requirements,
-            'skills' => $job->skills ?? [],
-            'experience_level' => $job->experience_level,
-            'education_level' => $job->education_level,
-            'is_remote' => (bool) $job->is_remote,
-            'posted_at' => $job->posted_at?->toDateTimeString(),
-            'expires_at' => $job->expires_at?->toDateTimeString(),
-            'job_url' => $job->job_url,
-            'apply_url' => $job->apply_url,
+            'id' => $post->id,
+            'title' => $post->title,
+            'company_name' => $post->company_name,
+            'location' => $post->location,
+            'post_type' => $post->post_type,
+            'salary_min' => $post->salary_min,
+            'salary_max' => $post->salary_max,
+            'salary_currency' => $post->salary_currency,
+            'description' => $post->description,
+            'requirements' => $post->requirements,
+            'skills' => $post->skills ?? [],
+            'experience_level' => $post->experience_level,
+            'education_level' => $post->education_level,
+            'is_remote' => (bool) $post->is_remote,
+            'posted_at' => $post->posted_at?->toDateTimeString(),
+            'expires_at' => $post->expires_at?->toDateTimeString(),
+            'post_url' => $post->post_url,
+            'apply_url' => $post->apply_url,
         ];
     }
 
@@ -135,7 +135,7 @@ class JobMatchingService
             'summary' => $userProfile->summary,
             'experience' => $userProfile->experience->map(function ($exp) {
                 return [
-                    'title' => $exp->job_title,
+                    'title' => $exp->post_title,
                     'company' => $exp->company_name,
                     'location' => $exp->location,
                     'start_date' => $exp->start_date?->format('Y-m'),
@@ -165,7 +165,7 @@ class JobMatchingService
                 ];
             })->toArray(),
             'preferences' => [
-                'job_types' => $userProfile->job_type_preferences,
+                'post_types' => $userProfile->post_type_preferences,
                 'locations' => $userProfile->location_preferences,
                 'salary_expectations' => [
                     'min' => $userProfile->salary_expectation_min,
@@ -178,102 +178,102 @@ class JobMatchingService
     }
 
     /**
-     * Generate a cover letter for a job application.
+     * Generate a cover letter for a post application.
      *
      * @param  \App\Models\UserProfile  $userProfile
-     * @param  \App\Models\Job  $job
+     * @param  \App\Models\Post  $post
      * @param  array  $options
      * @return array
      */
-    public function generateCoverLetter(UserProfile $userProfile, Job $job, array $options = []): array
+    public function generateCoverLetter(UserProfile $userProfile, Post $post, array $options = []): array
     {
-        $jobData = $this->formatJobData($job);
+        $postData = $this->formatPostData($post);
         $profileData = $this->formatUserProfileData($userProfile);
 
-        return $this->geminiService->generateCoverLetter($jobData, $profileData, $options);
+        return $this->geminiService->generateCoverLetter($postData, $profileData, $options);
     }
 
     /**
-     * Generate interview preparation questions for a job.
+     * Generate interview preparation questions for a post.
      *
      * @param  \App\Models\UserProfile  $userProfile
-     * @param  \App\Models\Job  $job
+     * @param  \App\Models\Post  $post
      * @param  array  $options
      * @return array
      */
-    public function generateInterviewQuestions(UserProfile $userProfile, Job $job, array $options = []): array
+    public function generateInterviewQuestions(UserProfile $userProfile, Post $post, array $options = []): array
     {
-        $jobData = $this->formatJobData($job);
+        $postData = $this->formatPostData($post);
         $profileData = $this->formatUserProfileData($userProfile);
 
-        return $this->geminiService->generateInterviewQuestions($jobData, $profileData, $options);
+        return $this->geminiService->generateInterviewQuestions($postData, $profileData, $options);
     }
 
     /**
-     * Get skills improvement suggestions based on job requirements.
+     * Get skills improvement suggestions based on post requirements.
      *
      * @param  \App\Models\UserProfile  $userProfile
-     * @param  \App\Models\Job  $job
+     * @param  \App\Models\Post  $post
      * @return array
      */
-    public function getSkillsImprovementSuggestions(UserProfile $userProfile, Job $job): array
+    public function getSkillsImprovementSuggestions(UserProfile $userProfile, Post $post): array
     {
-        $jobData = $this->formatJobData($job);
+        $postData = $this->formatPostData($post);
         $profileData = $this->formatUserProfileData($userProfile);
 
-        return $this->geminiService->getSkillsImprovementSuggestions($jobData, $profileData);
+        return $this->geminiService->getSkillsImprovementSuggestions($postData, $profileData);
     }
 
     /**
-     * Filter jobs based on basic criteria before AI matching.
+     * Filter posts based on basic criteria before AI matching.
      *
-     * @param  \Illuminate\Database\Eloquent\Collection  $jobs
+     * @param  \Illuminate\Database\Eloquent\Collection  $posts
      * @param  array  $criteria
      * @return \Illuminate\Database\Eloquent\Collection
      */
-    public function preFilterJobs($jobs, array $criteria)
+    public function preFilterPosts($posts, array $criteria)
     {
         // Filter by location if specified
         if (!empty($criteria['location'])) {
             $location = strtolower($criteria['location']);
-            $jobs = $jobs->filter(function ($job) use ($location) {
-                return str_contains(strtolower($job->location), $location) || 
-                       ($job->is_remote && $location === 'remote');
+            $posts = $posts->filter(function ($post) use ($location) {
+                return str_contains(strtolower($post->location), $location) || 
+                       ($post->is_remote && $location === 'remote');
             });
         }
 
-        // Filter by job type if specified
-        if (!empty($criteria['job_type'])) {
-            $jobType = strtolower($criteria['job_type']);
-            $jobs = $jobs->filter(function ($job) use ($jobType) {
-                return str_contains(strtolower($job->job_type), $jobType);
+        // Filter by post type if specified
+        if (!empty($criteria['post_type'])) {
+            $postType = strtolower($criteria['post_type']);
+            $posts = $posts->filter(function ($post) use ($postType) {
+                return str_contains(strtolower($post->post_type), $postType);
             });
         }
 
         // Filter by experience level if specified
         if (!empty($criteria['experience_level'])) {
             $expLevel = strtolower($criteria['experience_level']);
-            $jobs = $jobs->filter(function ($job) use ($expLevel) {
-                return str_contains(strtolower($job->experience_level), $expLevel);
+            $posts = $posts->filter(function ($post) use ($expLevel) {
+                return str_contains(strtolower($post->experience_level), $expLevel);
             });
         }
 
         // Filter by salary range if specified
         if (!empty($criteria['min_salary'])) {
             $minSalary = (float) $criteria['min_salary'];
-            $jobs = $jobs->filter(function ($job) use ($minSalary) {
-                return $job->salary_max >= $minSalary || $job->salary_min >= $minSalary;
+            $posts = $posts->filter(function ($post) use ($minSalary) {
+                return $post->salary_max >= $minSalary || $post->salary_min >= $minSalary;
             });
         }
 
         // Filter by remote preference if specified
         if (isset($criteria['is_remote'])) {
             $isRemote = (bool) $criteria['is_remote'];
-            $jobs = $jobs->filter(function ($job) use ($isRemote) {
-                return $job->is_remote === $isRemote;
+            $posts = $posts->filter(function ($post) use ($isRemote) {
+                return $post->is_remote === $isRemote;
             });
         }
 
-        return $jobs;
+        return $posts;
     }
 }

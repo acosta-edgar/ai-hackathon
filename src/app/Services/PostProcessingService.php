@@ -2,66 +2,66 @@
 
 namespace App\Services;
 
-use App\Models\Job;
-use App\Models\JobBoard;
+use App\Models\Post;
+use App\Models\PostBoard;
 use App\Models\SearchCriteria;
 use App\Models\UserProfile;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 
-class JobProcessingService
+class PostProcessingService
 {
     /**
-     * The job scraper service instance.
+     * The post scraper service instance.
      *
-     * @var \App\Services\JobScraperService
+     * @var \App\Services\PostScraperService
      */
-    protected $jobScraper;
+    protected $postScraper;
 
     /**
-     * The job matching service instance.
+     * The post matching service instance.
      *
-     * @var \App\Services\JobMatchingService
+     * @var \App\Services\PostMatchingService
      */
-    protected $jobMatcher;
+    protected $postMatcher;
 
     /**
-     * Create a new job processing service instance.
+     * Create a new post processing service instance.
      *
-     * @param  \App\Services\JobScraperService  $jobScraper
-     * @param  \App\Services\JobMatchingService  $jobMatcher
+     * @param  \App\Services\PostScraperService  $postScraper
+     * @param  \App\Services\PostMatchingService  $postMatcher
      * @return void
      */
-    public function __construct(JobScraperService $jobScraper, JobMatchingService $jobMatcher)
+    public function __construct(PostScraperService $postScraper, PostMatchingService $postMatcher)
     {
-        $this->jobScraper = $jobScraper;
-        $this->jobMatcher = $jobMatcher;
+        $this->postScraper = $postScraper;
+        $this->postMatcher = $postMatcher;
     }
 
     /**
-     * Process jobs for all active users with search criteria.
+     * Process posts for all active users with search criteria.
      *
-     * @param  int  $maxJobsPerUser
+     * @param  int  $maxPostsPerUser
      * @return array
      */
-    public function processAllUsersJobs(int $maxJobsPerUser = 20): array
+    public function processAllUsersPosts(int $maxPostsPerUser = 20): array
     {
         $results = [];
         $activeUsers = $this->getActiveUsersWithSearchCriteria();
 
         foreach ($activeUsers as $user) {
             try {
-                $result = $this->processUserJobs($user, $maxJobsPerUser);
+                $result = $this->processUserPosts($user, $maxPostsPerUser);
                 $results[$user->id] = $result;
             } catch (\Exception $e) {
-                Log::error("Error processing jobs for user {$user->id}: " . $e->getMessage(), [
+                Log::error("Error processing posts for user {$user->id}: " . $e->getMessage(), [
                     'user_id' => $user->id,
                     'exception' => $e,
                 ]);
                 $results[$user->id] = [
                     'success' => false,
                     'error' => $e->getMessage(),
-                    'jobs_processed' => 0,
+                    'posts_processed' => 0,
                 ];
             }
         }
@@ -70,13 +70,13 @@ class JobProcessingService
     }
 
     /**
-     * Process jobs for a specific user.
+     * Process posts for a specific user.
      *
      * @param  \App\Models\User  $user
-     * @param  int  $maxJobs
+     * @param  int  $maxPosts
      * @return array
      */
-    public function processUserJobs($user, int $maxJobs = 20): array
+    public function processUserPosts($user, int $maxPosts = 20): array
     {
         $profile = $user->profile;
         if (!$profile) {
@@ -88,59 +88,59 @@ class JobProcessingService
             throw new \Exception('User does not have active search criteria');
         }
 
-        // Scrape jobs based on search criteria
-        $scrapedJobs = $this->scrapeJobsForCriteria($searchCriteria, $maxJobs);
+        // Scrape posts based on search criteria
+        $scrapedPosts = $this->scrapePostsForCriteria($searchCriteria, $maxPosts);
         
-        // Filter out jobs already in the database
-        $newJobs = $this->filterExistingJobs($scrapedJobs, $user->id);
+        // Filter out posts already in the database
+        $newPosts = $this->filterExistingPosts($scrapedPosts, $user->id);
         
-        if (empty($newJobs)) {
+        if (empty($newPosts)) {
             return [
                 'success' => true,
-                'message' => 'No new jobs found',
-                'jobs_processed' => 0,
+                'message' => 'No new posts found',
+                'posts_processed' => 0,
             ];
         }
 
-        // Save new jobs
-        $savedJobs = [];
-        foreach ($newJobs as $jobData) {
+        // Save new posts
+        $savedPosts = [];
+        foreach ($newPosts as $postData) {
             try {
-                $job = $this->createJob($jobData, $user->id, $searchCriteria);
-                $savedJobs[] = $job;
+                $post = $this->createPost($postData, $user->id, $searchCriteria);
+                $savedPosts[] = $post;
             } catch (\Exception $e) {
-                Log::error('Error saving job: ' . $e->getMessage(), [
-                    'job_data' => $jobData,
+                Log::error('Error saving post: ' . $e->getMessage(), [
+                    'post_data' => $postData,
                     'exception' => $e,
                 ]);
                 continue;
             }
         }
 
-        // Match jobs to user profile
-        $matchedJobs = $this->matchJobsToProfile($savedJobs, $profile);
+        // Match posts to user profile
+        $matchedPosts = $this->matchPostsToProfile($savedPosts, $profile);
 
         return [
             'success' => true,
-            'jobs_processed' => count($savedJobs),
-            'jobs_matched' => count($matchedJobs),
-            'jobs' => $savedJobs,
+            'posts_processed' => count($savedPosts),
+            'posts_matched' => count($matchedPosts),
+            'posts' => $savedPosts,
         ];
     }
 
     /**
-     * Scrape jobs based on search criteria.
+     * Scrape posts based on search criteria.
      *
      * @param  \App\Models\SearchCriteria  $criteria
      * @param  int  $maxResults
      * @return array
      */
-    protected function scrapeJobsForCriteria(SearchCriteria $criteria, int $maxResults): array
+    protected function scrapePostsForCriteria(SearchCriteria $criteria, int $maxResults): array
     {
         $searchParams = [
             'keywords' => $criteria->keywords,
             'location' => $criteria->location,
-            'job_type' => $criteria->job_type,
+            'post_type' => $criteria->post_type,
             'experience_level' => $criteria->experience_level,
             'is_remote' => $criteria->is_remote,
             'salary_min' => $criteria->salary_min,
@@ -148,117 +148,117 @@ class JobProcessingService
             'salary_currency' => $criteria->salary_currency,
         ];
 
-        // If specific job boards are selected, scrape each one
-        $jobBoards = $criteria->jobBoards()->active()->get();
-        $allJobs = [];
+        // If specific post boards are selected, scrape each one
+        $postBoards = $criteria->postBoards()->active()->get();
+        $allPosts = [];
 
-        if ($jobBoards->isNotEmpty()) {
-            foreach ($jobBoards as $jobBoard) {
+        if ($postBoards->isNotEmpty()) {
+            foreach ($postBoards as $postBoard) {
                 try {
-                    $jobs = $this->jobScraper
-                        ->setJobBoard($jobBoard)
-                        ->scrapeJobs($searchParams, $maxResults);
-                    $allJobs = array_merge($allJobs, $jobs);
+                    $posts = $this->postScraper
+                        ->setPostBoard($postBoard)
+                        ->scrapePosts($searchParams, $maxResults);
+                    $allPosts = array_merge($allPosts, $posts);
                 } catch (\Exception $e) {
-                    Log::error("Error scraping job board {$jobBoard->id}: " . $e->getMessage(), [
-                        'job_board_id' => $jobBoard->id,
+                    Log::error("Error scraping post board {$postBoard->id}: " . $e->getMessage(), [
+                        'post_board_id' => $postBoard->id,
                         'exception' => $e,
                     ]);
                     continue;
                 }
             }
         } else {
-            // Scrape from all available job boards
-            $allJobs = $this->jobScraper->scrapeJobs($searchParams, $maxResults);
+            // Scrape from all available    post boards
+            $allPosts = $this->postScraper->scrapePosts($searchParams, $maxResults);
         }
 
-        return $allJobs;
+        return $allPosts;
     }
 
     /**
-     * Filter out jobs that already exist in the database.
+     * Filter out posts that already exist in the database.
      *
-     * @param  array  $jobs
+     * @param  array  $posts
      * @param  int  $userId
      * @return array
      */
-    protected function filterExistingJobs(array $jobs, int $userId): array
+    protected function filterExistingPosts(array $posts, int $userId): array
     {
-        if (empty($jobs)) {
+        if (empty($posts)) {
             return [];
         }
 
-        // Extract job URLs for checking
-        $urls = array_column($jobs, 'job_url');
+        // Extract post URLs for checking
+        $urls = array_column($posts, 'post_url');
         
-        // Find existing job URLs for this user
-        $existingUrls = Job::where('user_id', $userId)
-            ->whereIn('job_url', $urls)
-            ->pluck('job_url')
+        // Find existing post URLs for this user
+        $existingUrls = Post::where('user_id', $userId)
+            ->whereIn('post_url', $urls)
+            ->pluck('post_url')
             ->toArray();
         
-        // Filter out existing jobs
-        return array_filter($jobs, function($job) use ($existingUrls) {
-            return !in_array($job['job_url'], $existingUrls, true);
+        // Filter out existing posts
+        return array_filter($posts, function($post) use ($existingUrls) {
+            return !in_array($post['post_url'], $existingUrls, true);
         });
     }
 
     /**
-     * Create a new job from scraped data.
+     * Create a new post from scraped data.
      *
-     * @param  array  $jobData
+     * @param  array  $postData
      * @param  int  $userId
      * @param  \App\Models\SearchCriteria  $criteria
-     * @return \App\Models\Job
+     * @return \App\Models\Post
      */
-    protected function createJob(array $jobData, int $userId, SearchCriteria $criteria): Job
+    protected function createPost(array $postData, int $userId, SearchCriteria $criteria): Post
     {
-        return DB::transaction(function () use ($jobData, $userId, $criteria) {
-            $job = new Job([
+        return DB::transaction(function () use ($postData, $userId, $criteria) {
+            $post = new Post([
                 'user_id' => $userId,
                 'search_criteria_id' => $criteria->id,
-                'job_board_id' => $jobData['job_board_id'] ?? null,
-                'title' => $jobData['title'],
-                'company_name' => $jobData['company_name'],
-                'location' => $jobData['location'],
-                'job_type' => $jobData['job_type'] ?? null,
-                'salary_min' => $jobData['salary_min'] ?? null,
-                'salary_max' => $jobData['salary_max'] ?? null,
-                'salary_currency' => $jobData['salary_currency'] ?? 'USD',
-                'description' => $jobData['description'] ?? '',
-                'requirements' => $jobData['requirements'] ?? null,
-                'skills' => $jobData['skills'] ?? [],
-                'experience_level' => $jobData['experience_level'] ?? null,
-                'education_level' => $jobData['education_level'] ?? null,
-                'is_remote' => $jobData['is_remote'] ?? false,
-                'job_url' => $jobData['job_url'],
-                'apply_url' => $jobData['apply_url'] ?? $jobData['job_url'],
-                'posted_at' => $jobData['posted_at'] ?? now(),
-                'expires_at' => $jobData['expires_at'] ?? now()->addDays(30),
-                'source' => $jobData['source'] ?? 'unknown',
+                'post_board_id' => $postData['post_board_id'] ?? null,
+                'title' => $postData['title'],
+                'company_name' => $postData['company_name'],
+                'location' => $postData['location'],
+                'post_type' => $postData['post_type'] ?? null,
+                'salary_min' => $postData['salary_min'] ?? null,
+                'salary_max' => $postData['salary_max'] ?? null,
+                'salary_currency' => $postData['salary_currency'] ?? 'USD',
+                'description' => $postData['description'] ?? '',
+                'requirements' => $postData['requirements'] ?? null,
+                'skills' => $postData['skills'] ?? [],
+                'experience_level' => $postData['experience_level'] ?? null,
+                'education_level' => $postData['education_level'] ?? null,
+                'is_remote' => $postData['is_remote'] ?? false,
+                'post_url' => $postData['post_url'],
+                'apply_url' => $postData['apply_url'] ?? $postData['post_url'],
+                'posted_at' => $postData['posted_at'] ?? now(),
+                'expires_at' => $postData['expires_at'] ?? now()->addDays(30),
+                'source' => $postData['source'] ?? 'unknown',
                 'status' => 'new',
-                'raw_data' => $jobData['raw_data'] ?? null,
+                'raw_data' => $postData['raw_data'] ?? null,
             ]);
 
-            $job->save();
+            $post->save();
 
             // If skills are provided, sync them
-            if (!empty($jobData['skills'])) {
-                $this->syncJobSkills($job, $jobData['skills']);
+            if (!empty($postData['skills'])) {
+                $this->syncPostSkills($post, $postData['skills']);
             }
 
-            return $job;
+            return $post;
         });
     }
 
     /**
-     * Sync job skills with the database.
+     * Sync post skills with the database.
      *
-     * @param  \App\Models\Job  $job
+     * @param  \App\Models\Post  $post
      * @param  array  $skills
      * @return void
      */
-    protected function syncJobSkills(Job $job, array $skills): void
+    protected function syncPostSkills(Post $post, array $skills): void
     {
         // Normalize skill names
         $skills = array_map('trim', $skills);
@@ -275,31 +275,31 @@ class JobProcessingService
             $skillIds[] = $skill->id;
         }
         
-        // Sync job skills
-        $job->skills()->sync($skillIds);
+        // Sync post skills
+        $post->skills()->sync($skillIds);
     }
 
     /**
-     * Match jobs to a user profile.
+     * Match posts to a user profile.
      *
-     * @param  array  $jobs
+     * @param  array  $posts
      * @param  \App\Models\UserProfile  $profile
      * @return array
      */
-    protected function matchJobsToProfile(array $jobs, UserProfile $profile): array
+    protected function matchPostsToProfile(array $posts, UserProfile $profile): array
     {
-        if (empty($jobs)) {
+        if (empty($posts)) {
             return [];
         }
 
-        $matchedJobs = [];
+        $matchedPosts = [];
         
-        foreach ($jobs as $job) {
+        foreach ($posts as $post) {
             try {
-                $matchResult = $this->jobMatcher->matchJob($profile, $job);
+                $matchResult = $this->postMatcher->matchPost($profile, $post);
                 
-                // Create or update job match
-                $jobMatch = $job->matches()->updateOrCreate(
+                // Create or update post match
+                $postMatch = $post->matches()->updateOrCreate(
                     ['user_profile_id' => $profile->id],
                     [
                         'match_score' => $matchResult['overall_score'],
@@ -311,16 +311,16 @@ class JobProcessingService
                     ]
                 );
                 
-                $matchedJobs[] = $jobMatch;
+                $matchedPosts[] = $postMatch;
                 
-                // Update job status
-                if ($job->status === 'new') {
-                    $job->status = 'matched';
-                    $job->save();
+                // Update post status
+                if ($post->status === 'new') {
+                    $post->status = 'matched';
+                    $post->save();
                 }
             } catch (\Exception $e) {
-                Log::error("Error matching job {$job->id} to profile {$profile->id}: " . $e->getMessage(), [
-                    'job_id' => $job->id,
+                Log::error("Error matching post {$post->id} to profile {$profile->id}: " . $e->getMessage(), [
+                    'post_id' => $post->id,
                     'profile_id' => $profile->id,
                     'exception' => $e,
                 ]);
@@ -328,7 +328,7 @@ class JobProcessingService
             }
         }
         
-        return $matchedJobs;
+        return $matchedPosts;
     }
 
     /**
@@ -349,22 +349,22 @@ class JobProcessingService
     }
 
     /**
-     * Process a single job for a user.
+     * Process a single post for a user.
      *
-     * @param  int  $jobId
+     * @param  int  $postId
      * @param  int  $userId
      * @return array
      */
-    public function processSingleJob(int $jobId, int $userId): array
+    public function processSinglePost(int $postId, int $userId): array
     {
-        $job = Job::findOrFail($jobId);
+        $post = Post::findOrFail($postId);
         $profile = UserProfile::where('user_id', $userId)->firstOrFail();
         
-        // Match the job to the profile
-        $matchResult = $this->jobMatcher->matchJob($profile, $job);
+        // Match the post to the profile
+        $matchResult = $this->postMatcher->matchPost($profile, $post);
         
-        // Create or update job match
-        $jobMatch = $job->matches()->updateOrCreate(
+        // Create or update post match
+        $postMatch = $post->matches()->updateOrCreate(
             ['user_profile_id' => $profile->id],
             [
                 'match_score' => $matchResult['overall_score'],
@@ -376,52 +376,52 @@ class JobProcessingService
             ]
         );
         
-        // Update job status if it was new
-        if ($job->status === 'new') {
-            $job->status = 'matched';
-            $job->save();
+        // Update post status if it was new
+        if ($post->status === 'new') {
+            $post->status = 'matched';
+            $post->save();
         }
         
         return [
             'success' => true,
-            'job_match' => $jobMatch,
+            'post_match' => $postMatch,
         ];
     }
 
     /**
-     * Refresh matches for a user's jobs.
+     * Refresh matches for a user's posts.
      *
      * @param  int  $userId
      * @param  array  $filters
      * @return array
      */
-    public function refreshUserJobMatches(int $userId, array $filters = []): array
+    public function refreshUserPostMatches(int $userId, array $filters = []): array
     {
         $profile = UserProfile::where('user_id', $userId)->firstOrFail();
         
-        $query = Job::where('user_id', $userId);
+        $query = Post::where('user_id', $userId);
         
         // Apply filters
         if (!empty($filters['status'])) {
             $query->where('status', $filters['status']);
         }
         
-        if (!empty($filters['job_type'])) {
-            $query->where('job_type', $filters['job_type']);
+        if (!empty($filters['post_type'])) {
+            $query->where('post_type', $filters['post_type']);
         }
         
         if (!empty($filters['is_remote'])) {
             $query->where('is_remote', (bool) $filters['is_remote']);
         }
         
-        $jobs = $query->get();
+        $posts = $query->get();
         $refreshed = [];
         
-        foreach ($jobs as $job) {
+        foreach ($posts as $post) {
             try {
-                $matchResult = $this->jobMatcher->matchJob($profile, $job);
+                $matchResult = $this->postMatcher->matchPost($profile, $post);
                 
-                $jobMatch = $job->matches()->updateOrCreate(
+                $postMatch = $post->matches()->updateOrCreate(
                     ['user_profile_id' => $profile->id],
                     [
                         'match_score' => $matchResult['overall_score'],
@@ -433,10 +433,10 @@ class JobProcessingService
                     ]
                 );
                 
-                $refreshed[] = $jobMatch;
+                $refreshed[] = $postMatch;
             } catch (\Exception $e) {
-                Log::error("Error refreshing job match {$job->id} for user {$userId}: " . $e->getMessage(), [
-                    'job_id' => $job->id,
+                Log::error("Error refreshing post match {$post->id} for user {$userId}: " . $e->getMessage(), [
+                    'post_id' => $post->id,
                     'user_id' => $userId,
                     'exception' => $e,
                 ]);
@@ -447,7 +447,7 @@ class JobProcessingService
         return [
             'success' => true,
             'refreshed_count' => count($refreshed),
-            'job_matches' => $refreshed,
+            'post_matches' => $refreshed,
         ];
     }
 }

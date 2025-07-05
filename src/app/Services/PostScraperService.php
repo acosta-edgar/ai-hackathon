@@ -2,13 +2,13 @@
 
 namespace App\Services;
 
-use App\Models\Job;
-use App\Models\JobBoard;
+use App\Models\Post;
+use App\Models\PostBoard;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
-class JobScraperService
+class PostScraperService
 {
     /**
      * The Tavily API base URL.
@@ -25,34 +25,34 @@ class JobScraperService
     protected $tavilyApiKey;
 
     /**
-     * The job board model.
+     * The post board model.
      *
-     * @var \App\Models\JobBoard|null
+     * @var \App\Models\PostBoard|null
      */
-    protected $jobBoard;
+    protected $postBoard;
 
     /**
-     * Create a new job scraper service instance.
+     * Create a new post scraper service instance.
      *
      * @param  string|null  $apiKey
-     * @param  \App\Models\JobBoard|null  $jobBoard
+     * @param  \App\Models\PostBoard|null  $postBoard
      * @return void
      */
-    public function __construct(?string $apiKey = null, ?JobBoard $jobBoard = null)
+    public function __construct(?string $apiKey = null, ?PostBoard $postBoard = null)
     {
         $this->tavilyApiKey = $apiKey ?: config('services.tavily.api_key');
-        $this->jobBoard = $jobBoard;
+        $this->postBoard = $postBoard;
     }
 
     /**
-     * Scrape jobs based on search criteria.
+     * Scrape posts based on search criteria.
      *
      * @param  array  $criteria
      * @param  int  $maxResults
      * @return array
      * @throws \Exception
      */
-    public function scrapeJobs(array $criteria, int $maxResults = 50): array
+    public function scrapePosts(array $criteria, int $maxResults = 50): array
     {
         if (empty($this->tavilyApiKey)) {
             throw new \Exception('Tavily API key is not configured.');
@@ -79,9 +79,9 @@ class JobScraperService
             $queryParts[] = $criteria['keywords'];
         }
 
-        // Add job title
-        if (!empty($criteria['job_title'])) {
-            $queryParts[] = $criteria['job_title'];
+        // Add post title
+        if (!empty($criteria['post_title'])) {
+            $queryParts[] = $criteria['post_title'];
         }
 
         // Add company name
@@ -94,9 +94,9 @@ class JobScraperService
             $queryParts[] = $criteria['location'];
         }
 
-        // Add job type if specified
-        if (!empty($criteria['job_type'])) {
-            $queryParts[] = $criteria['job_type'] . ' job';
+        // Add post type if specified
+        if (!empty($criteria['post_type'])) {
+            $queryParts[] = $criteria['post_type'] . ' post';
         }
 
         // Add experience level if specified
@@ -131,7 +131,7 @@ class JobScraperService
             'include_answer' => false,
             'include_raw_content' => true,
             'max_results' => $maxResults,
-            'include_domains' => $this->getJobBoardDomains(),
+            'include_domains' => $this->getPostBoardDomains(),
             'exclude_domains' => $this->getExcludedDomains(),
         ]);
 
@@ -143,19 +143,19 @@ class JobScraperService
     }
 
     /**
-     * Get job board domains to include in the search.
+     * Get post board domains to include in the search.
      *
      * @return array
      */
-    protected function getJobBoardDomains(): array
+    protected function getPostBoardDomains(): array
     {
-        if ($this->jobBoard) {
-            return [$this->jobBoard->domain];
+        if ($this->postBoard) {
+            return [$this->postBoard->domain];
         }
 
-        // Default job board domains to include
+        // Default post board domains to include
         return [
-            'linkedin.com/jobs',
+            'linkedin.com/posts',
             'indeed.com',
             'glassdoor.com',
             'monster.com',
@@ -164,8 +164,8 @@ class JobScraperService
             'ziprecruiter.com',
             'simplyhired.com',
             'angel.co',
-            'stackoverflow.com/jobs',
-            'github.com/jobs',
+            'stackoverflow.com/posts',
+            'github.com/posts',
             'remoteok.io',
             'weworkremotely.com',
         ];
@@ -189,7 +189,7 @@ class JobScraperService
     }
 
     /**
-     * Process search results and extract job listings.
+     * Process search results and extract post listings.
      *
      * @param  array  $response
      * @param  array  $criteria
@@ -197,24 +197,24 @@ class JobScraperService
      */
     protected function processSearchResults(array $response, array $criteria): array
     {
-        $jobs = [];
+        $posts = [];
         $processedUrls = [];
 
         // Process organic results
         if (!empty($response['organic_results'])) {
             foreach ($response['organic_results'] as $result) {
                 try {
-                    $job = $this->extractJobFromResult($result, $criteria);
+                    $post = $this->extractPostFromResult($result, $criteria);
                     
                     // Skip if we've already processed this URL
-                    if (in_array($job['job_url'], $processedUrls, true)) {
+                    if (in_array($post['post_url'], $processedUrls, true)) {
                         continue;
                     }
                     
-                    $jobs[] = $job;
-                    $processedUrls[] = $job['job_url'];
+                    $posts[] = $post;
+                    $processedUrls[] = $post['post_url'];
                 } catch (\Exception $e) {
-                    Log::error('Error processing job result: ' . $e->getMessage(), [
+                    Log::error('Error processing post result: ' . $e->getMessage(), [
                         'result' => $result,
                         'exception' => $e,
                     ]);
@@ -223,30 +223,30 @@ class JobScraperService
             }
         }
 
-        return $jobs;
+        return $posts;
     }
 
     /**
-     * Extract job data from a search result.
+     * Extract post data from a search result.
      *
      * @param  array  $result
      * @param  array  $criteria
      * @return array
      */
-    protected function extractJobFromResult(array $result, array $criteria): array
+    protected function extractPostFromResult(array $result, array $criteria): array
     {
         // Extract basic information
-        $jobData = [
+        $postData = [
             'title' => $result['title'] ?? 'No Title',
             'company_name' => $this->extractCompanyName($result),
             'location' => $this->extractLocation($result, $criteria),
-            'job_url' => $result['url'] ?? '',
+            'post_url' => $result['url'] ?? '',
             'apply_url' => $result['url'] ?? '',
             'description' => $this->cleanDescription($result['content'] ?? ''),
             'posted_at' => now(),
             'source' => $this->extractSource($result['url'] ?? ''),
-            'is_remote' => $this->isRemoteJob($result, $criteria),
-            'job_type' => $criteria['job_type'] ?? null,
+            'is_remote' => $this->isRemotePost($result, $criteria),
+            'post_type' => $criteria['post_type'] ?? null,
             'experience_level' => $criteria['experience_level'] ?? null,
             'salary_min' => $criteria['salary_min'] ?? null,
             'salary_max' => $criteria['salary_max'] ?? null,
@@ -258,15 +258,15 @@ class JobScraperService
         // Extract additional metadata if available
         if (!empty($result['metadata'])) {
             $metadata = $result['metadata'];
-            $jobData['posted_at'] = $metadata['published_date'] ?? now();
+            $postData['posted_at'] = $metadata['published_date'] ?? now();
             
             if (!empty($metadata['salary'])) {
                 $salaryData = $this->extractSalary($metadata['salary']);
-                $jobData = array_merge($jobData, $salaryData);
+                $postData = array_merge($postData, $salaryData);
             }
         }
 
-        return $jobData;
+        return $postData;
     }
 
     /**
@@ -277,14 +277,14 @@ class JobScraperService
      */
     protected function extractCompanyName(array $result): string
     {
-        // Try to get company name from the title (common format: "Job Title at Company")
+        // Try to get company name from the title (common format: "Post Title at Company")
         if (!empty($result['title'])) {
             $titleParts = explode(' at ', $result['title']);
             if (count($titleParts) > 1) {
                 return trim($titleParts[1]);
             }
             
-            // Try another common format: "Company: Job Title"
+            // Try another common format: "Company: Post Title"
             $titleParts = explode(': ', $result['title']);
             if (count($titleParts) > 1) {
                 return trim($titleParts[0]);
@@ -317,7 +317,7 @@ class JobScraperService
             return $criteria['location'];
         }
         
-        // Try to extract from title (common format: "Job Title - Location")
+        // Try to extract from title (common format: "Post Title - Location")
         if (!empty($result['title'])) {
             $titleParts = explode(' - ', $result['title']);
             if (count($titleParts) > 1) {
@@ -341,13 +341,13 @@ class JobScraperService
     }
 
     /**
-     * Check if job is remote based on result and criteria.
+     * Check if post is remote based on result and criteria.
      *
      * @param  array  $result
      * @param  array  $criteria
      * @return bool
      */
-    protected function isRemoteJob(array $result, array $criteria): bool
+    protected function isRemotePost(array $result, array $criteria): bool
     {
         // If remote is specified in criteria, use that
         if (isset($criteria['is_remote'])) {
@@ -461,7 +461,7 @@ class JobScraperService
     }
 
     /**
-     * Clean and format job description.
+     * Clean and format post description.
      *
      * @param  string  $description
      * @return string
@@ -483,35 +483,35 @@ class JobScraperService
     }
 
     /**
-     * Save scraped jobs to the database.
+     * Save scraped posts to the database.
      *
-     * @param  array  $jobs
+     * @param  array  $posts
      * @param  int  $userId
      * @return array
      */
-    public function saveJobs(array $jobs, int $userId): array
+    public function savePosts(array $posts, int $userId): array
     {
-        $savedJobs = [];
+        $savedPosts = [];
         $skipped = 0;
         
-        foreach ($jobs as $jobData) {
+        foreach ($posts as $postData) {
             try {
-                // Skip if job with the same URL already exists
-                if (Job::where('job_url', $jobData['job_url'])->exists()) {
+                // Skip if post with the same URL already exists
+                if (Post::where('post_url', $postData['post_url'])->exists()) {
                     $skipped++;
                     continue;
                 }
                 
-                // Create new job
-                $job = new Job($jobData);
-                $job->user_id = $userId;
-                $job->job_board_id = $this->jobBoard ? $this->jobBoard->id : null;
-                $job->save();
+                // Create new post
+                $post = new Post($postData);
+                $post->user_id = $userId;
+                $post->post_board_id = $this->postBoard ? $this->postBoard->id : null;
+                $post->save();
                 
-                $savedJobs[] = $job;
+                $savedPosts[] = $post;
             } catch (\Exception $e) {
-                Log::error('Error saving job: ' . $e->getMessage(), [
-                    'job_data' => $jobData,
+                Log::error('Error saving post: ' . $e->getMessage(), [
+                    'post_data' => $postData,
                     'exception' => $e,
                 ]);
                 continue;
@@ -519,21 +519,21 @@ class JobScraperService
         }
         
         return [
-            'saved' => count($savedJobs),
+            'saved' => count($savedPosts),
             'skipped' => $skipped,
-            'jobs' => $savedJobs,
+            'posts' => $savedPosts,
         ];
     }
 
     /**
-     * Set the job board to use for scraping.
+     * Set the post board to use for scraping.
      *
-     * @param  \App\Models\JobBoard  $jobBoard
+     * @param  \App\Models\PostBoard  $postBoard
      * @return $this
      */
-    public function setJobBoard(JobBoard $jobBoard): self
+    public function setPostBoard(PostBoard $postBoard): self
     {
-        $this->jobBoard = $jobBoard;
+        $this->postBoard = $postBoard;
         return $this;
     }
 }

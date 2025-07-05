@@ -17,7 +17,7 @@ class SearchCriteria extends Model
         'is_default',
         'keywords',
         'locations',
-        'job_type',
+        'post_type',
         'experience_level',
         'min_salary',
         'max_salary',
@@ -25,7 +25,7 @@ class SearchCriteria extends Model
         'is_remote',
         'industries',
         'companies',
-        'job_titles',
+        'post_titles',
         'skills_included',
         'skills_excluded',
         'days_posted',
@@ -38,7 +38,7 @@ class SearchCriteria extends Model
         'locations' => 'array',
         'industries' => 'array',
         'companies' => 'array',
-        'job_titles' => 'array',
+        'post_titles' => 'array',
         'skills_included' => 'array',
         'skills_excluded' => 'array',
         'min_salary' => 'decimal:2',
@@ -53,8 +53,8 @@ class SearchCriteria extends Model
         return $this->belongsTo(UserProfile::class);
     }
 
-    public function jobMatches(): HasMany
+    public function postMatches(): HasMany
     {
-        return $this->hasMany(JobMatch::class);
+        return $this->hasMany(PostMatch::class);
     }
 }

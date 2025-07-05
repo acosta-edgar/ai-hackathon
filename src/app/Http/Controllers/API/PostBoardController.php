@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Models\JobBoard;
+use App\Models\PostBoard;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
-class JobBoardController extends Controller
+class PostBoardController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -15,8 +15,8 @@ class JobBoardController extends Controller
      */
     public function index()
     {
-        $jobBoards = JobBoard::paginate(10);
-        return $this->sendPaginatedResponse($jobBoards, 'Job boards retrieved successfully');
+        $postBoards = PostBoard::paginate(10);
+        return $this->sendPaginatedResponse($postBoards, 'Post boards retrieved successfully');
     }
 
     /**
@@ -44,9 +44,9 @@ class JobBoardController extends Controller
             return $this->sendError('Validation Error', $validator->errors(), 422);
         }
 
-        $jobBoard = JobBoard::create($input);
+        $postBoard = PostBoard::create($input);
 
-        return $this->sendResponse($jobBoard, 'Job board created successfully', 201);
+        return $this->sendResponse($postBoard, 'Post board created successfully', 201);
     }
 
     /**
@@ -57,13 +57,13 @@ class JobBoardController extends Controller
      */
     public function show($id)
     {
-        $jobBoard = JobBoard::find($id);
+        $postBoard = PostBoard::find($id);
 
-        if (is_null($jobBoard)) {
-            return $this->sendError('Job board not found');
+        if (is_null($postBoard)) {
+            return $this->sendError('Post board not found');
         }
 
-        return $this->sendResponse($jobBoard, 'Job board retrieved successfully');
+        return $this->sendResponse($postBoard, 'Post board retrieved successfully');
     }
 
     /**
@@ -75,10 +75,10 @@ class JobBoardController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $jobBoard = JobBoard::find($id);
+        $postBoard = PostBoard::find($id);
 
-        if (is_null($jobBoard)) {
-            return $this->sendError('Job board not found');
+        if (is_null($postBoard)) {
+            return $this->sendError('Post board not found');
         }
 
         $input = $request->all();
@@ -99,9 +99,9 @@ class JobBoardController extends Controller
             return $this->sendError('Validation Error', $validator->errors(), 422);
         }
 
-        $jobBoard->update($input);
+        $postBoard->update($input);
 
-        return $this->sendResponse($jobBoard, 'Job board updated successfully');
+        return $this->sendResponse($postBoard, 'Post board updated successfully');
     }
 
     /**
@@ -112,49 +112,49 @@ class JobBoardController extends Controller
      */
     public function destroy($id)
     {
-        $jobBoard = JobBoard::find($id);
+        $postBoard = PostBoard::find($id);
 
-        if (is_null($jobBoard)) {
-            return $this->sendError('Job board not found');
+        if (is_null($postBoard)) {
+            return $this->sendError('Post board not found');
         }
 
-        // Check if there are jobs associated with this board
-        if ($jobBoard->jobs()->exists()) {
-            return $this->sendError('Cannot delete job board with associated jobs', [], 409);
+        // Check if there are posts associated with this board
+        if ($postBoard->posts()->exists()) {
+            return $this->sendError('Cannot delete post board with associated posts', [], 409);
         }
 
-        $jobBoard->delete();
+        $postBoard->delete();
 
-        return $this->sendResponse([], 'Job board deleted successfully');
+        return $this->sendResponse([], 'Post board deleted successfully');
     }
 
     /**
-     * Scrape jobs from the job board.
+     * Scrape posts from the post board.
      *
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function scrapeJobs($id)
+    public function scrapePosts($id)
     {
-        $jobBoard = JobBoard::find($id);
+        $postBoard = PostBoard::find($id);
 
-        if (is_null($jobBoard)) {
-            return $this->sendError('Job board not found');
+        if (is_null($postBoard)) {
+            return $this->sendError('Post board not found');
         }
 
-        // TODO: Implement job scraping logic using Tavily API
+        // TODO: Implement post scraping logic using Tavily API
         // This is a placeholder for the actual implementation
-        $scrapedJobs = [
-            'job_board_id' => $jobBoard->id,
-            'jobs_scraped' => 0,
-            'jobs_added' => 0,
-            'jobs_updated' => 0,
+        $scrapedPosts = [
+            'post_board_id' => $postBoard->id,
+            'posts_scraped' => 0,
+            'posts_added' => 0,
+            'posts_updated' => 0,
             'last_scraped_at' => now()->toDateTimeString(),
         ];
 
         // Update the last scraped timestamp
-        $jobBoard->update(['last_searched_at' => now()]);
+        $postBoard->update(['last_searched_at' => now()]);
 
-        return $this->sendResponse($scrapedJobs, 'Job scraping completed successfully');
+        return $this->sendResponse($scrapedPosts, 'Post scraping completed successfully');
     }
 }
