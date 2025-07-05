@@ -24,55 +24,55 @@ use Illuminate\Support\Facades\Route;
 Route::get('/scraper/health', [ScraperController::class, 'healthCheck']);
 
 // Protected routes (require authentication)
-Route::middleware('auth:api')->group(function () {
+//Route::middleware('auth:api')->group(function () {
     // User Profile Routes
     Route::apiResource('user-profiles', UserProfileController::class);
 
-    // Job Board Routes
-    Route::apiResource('job-boards', JobBoardController::class);
+    // Post Board Routes
+    Route::apiResource('post-boards', PostBoardController::class);
 
     // Search Criteria Routes
     Route::apiResource('search-criteria', SearchCriteriaController::class);
 
-    // Job Routes
-    Route::apiResource('jobs', JobController::class);
+    // Post Routes
+    Route::apiResource('posts', PostController::class);
 
-    // Job Match Routes
-    Route::apiResource('job-matches', JobMatchController::class);
+    // Post Match Routes
+    Route::apiResource('post-matches', PostMatchController::class);
 
-    // Custom Job Match Actions
-    Route::prefix('job-matches/{jobMatch}')->group(function () {
-        Route::post('/view', [JobMatchController::class, 'markAsViewed']);
-        Route::post('/apply', [JobMatchController::class, 'markAsApplied']);
-        Route::post('/reject', [JobMatchController::class, 'markAsRejected']);
-        Route::post('/interested', [JobMatchController::class, 'markAsInterested']);
-        Route::post('/not-interested', [JobMatchController::class, 'markAsNotInterested']);
+    // Custom Post Match Actions
+    Route::prefix('post-matches/{postMatch}')->group(function () {
+        Route::post('/view', [PostMatchController::class, 'markAsViewed']);
+        Route::post('/apply', [PostMatchController::class, 'markAsApplied']);
+        Route::post('/reject', [PostMatchController::class, 'markAsRejected']);
+        Route::post('/interested', [PostMatchController::class, 'markAsInterested']);
+        Route::post('/not-interested', [PostMatchController::class, 'markAsNotInterested']);
     });
 
-    // Custom Job Actions
-    Route::prefix('jobs')->group(function () {
-        Route::get('/search', [JobController::class, 'search']);
-        Route::post('/{job}/scrape', [JobController::class, 'scrapeDetails']);
+    // Custom Post Actions
+    Route::prefix('posts')->group(function () {
+        Route::get('/search', [PostController::class, 'search']);
+        Route::post('/{post}/scrape', [PostController::class, 'scrapeDetails']);
     });
 
     // Scraper API Routes
     Route::prefix('scraper')->group(function () {
-        // Job Search
-        Route::post('/search', [ScraperController::class, 'searchJobs']);
+        // Post Search
+        Route::post('/search', [ScraperController::class, 'searchPosts']);
         
-        // Job Details
-        Route::get('/jobs/{jobId}', [ScraperController::class, 'getJobDetails']);
+        // Post Details
+        Route::get('/posts/{postId}', [ScraperController::class, 'getPostDetails']);
         
         // Company Information
         Route::get('/company', [ScraperController::class, 'getCompanyInfo']);
         
-        // Similar Jobs
-        Route::get('/jobs/{jobId}/similar', [ScraperController::class, 'getSimilarJobs']);
+        // Similar Posts
+        Route::get('/posts/{postId}/similar', [ScraperController::class, 'getSimilarPosts']);
         
         // AI Enrichment
-        Route::post('/enrich', [ScraperController::class, 'enrichJobWithAi']);
+        Route::post('/enrich', [ScraperController::class, 'enrichPostWithAi']);
     });
-});
+//});
 
 // Post Matching
 Route::prefix('matching')->group(function () {
