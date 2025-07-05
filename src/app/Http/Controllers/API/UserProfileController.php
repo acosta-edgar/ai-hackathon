@@ -6,7 +6,7 @@ use App\Models\UserProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
-class UserProfileController extends Controller
+class UserProfileController extends BaseController
 {
     /**
      * Display a listing of the resource.

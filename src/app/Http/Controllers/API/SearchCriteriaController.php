@@ -7,7 +7,7 @@ use App\Models\UserProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
-class SearchCriteriaController extends Controller
+class SearchCriteriaController extends BaseController
 {
     /**
      * Display a listing of the resource.

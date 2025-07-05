@@ -6,7 +6,7 @@ use App\Models\PostBoard;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
-class PostBoardController extends Controller
+class PostBoardController extends BaseController
 {
     /**
      * Display a listing of the resource.
