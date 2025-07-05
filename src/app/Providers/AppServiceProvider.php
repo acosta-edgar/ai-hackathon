@@ -11,7 +11,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Register the ScraperServiceProvider
+        $this->app->register(\App\Providers\ScraperServiceProvider::class);
     }
 
     /**
