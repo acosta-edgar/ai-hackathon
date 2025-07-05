@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('search_criteria', function (Blueprint $table) {
+        Schema::create('search_criterias', function (Blueprint $table) {
             $table->id();
             $table->string('name');
             $table->boolean('is_default')->default(false);
@@ -40,6 +40,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('search_criteria');
+        Schema::dropIfExists('search_criterias');
     }
 };

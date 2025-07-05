@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('job_matches', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_profile_id')->constrained('user_profiles')->onDelete('cascade');
-            $table->foreignId('job_id')->constrained()->onDelete('cascade');
+            $table->foreignId('post_id')->constrained()->onDelete('cascade');
             $table->foreignId('search_criteria_id')->nullable()->constrained()->onDelete('set null');
             
             // Match scores (0-100)
@@ -52,14 +52,14 @@ return new class extends Migration
             
             // Indexes for better query performance
             $table->index(['user_profile_id', 'overall_score']);
-            $table->index(['job_id', 'overall_score']);
+            $table->index(['post_id', 'overall_score']);
             $table->index('status');
             $table->index('is_interested');
             $table->index('is_not_interested');
             $table->index('applied_at');
             
             // Ensure one match per user-profile-job combination
-            $table->unique(['user_profile_id', 'job_id']);
+            $table->unique(['user_profile_id', 'post_id']);
         });
     }
 
