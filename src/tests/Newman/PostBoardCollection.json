@@ -1,0 +1,45 @@
+{
+  "info": {
+    "name": "PostBoard API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Get PostBoards",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost/api/post-boards",
+          "protocol": "http",
+          "host": ["localhost"],
+          "path": ["api", "post-boards"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create PostBoard",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Test Board\",\n  \"url\": \"https://example.com\",\n  \"type\": \"forum\",\n  \"description\": \"A test board.\",\n  \"requires_authentication\": false\n}"
+        },
+        "url": {
+          "raw": "http://localhost/api/post-boards",
+          "protocol": "http",
+          "host": ["localhost"],
+          "path": ["api", "post-boards"]
+        }
+      },
+      "response": []
+    }
+  ]
+}

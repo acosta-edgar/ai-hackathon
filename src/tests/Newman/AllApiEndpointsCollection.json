@@ -1,0 +1,60 @@
+{
+  "info": {
+    "name": "All API Endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    
+    { "name": "Get User Profiles", "request": { "method": "GET", "url": { "raw": "http://localhost/api/user-profiles", "protocol": "http", "host": ["localhost"], "path": ["api", "user-profiles"] } }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test(\"Status code is 200\", function () {", "    pm.response.to.have.status(200);", "});", "pm.test(\"Response is JSON\", function () {", "    pm.response.to.be.withBody;", "    pm.response.to.be.json;", "});" ] }}] },
+    { "name": "Create User Profile", "request": { "method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\"name\":\"Test User\",\"email\":\"testuser@example.com\",\"title\":\"Developer\",\"skills\":[\"JavaScript\",\"Python\"],\"experience\":[{\"company\":\"ABC Inc.\",\"position\":\"Software Engineer\",\"startDate\":\"2020-01-01\",\"endDate\":\"2022-01-01\"}],\"education\":[{\"school\":\"University of Example\",\"degree\":\"Bachelor of Science in Computer Science\",\"startDate\":\"2015-01-01\",\"endDate\":\"2019-01-01\"}]}" }, "url": { "raw": "http://localhost/api/user-profiles", "protocol": "http", "host": ["localhost"], "path": ["api", "user-profiles"] } }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test(\"Status code is 201\", function () {", "    pm.response.to.have.status(201);", "});", "pm.test(\"Response is JSON\", function () {", "    pm.response.to.be.withBody;", "    pm.response.to.be.json;", "});" ] }}] },
+    { "name": "Show User Profile", "request": { "method": "GET", "url": { "raw": "http://localhost/api/user-profiles/1", "protocol": "http", "host": ["localhost"], "path": ["api", "user-profiles", "1"] } } },
+    { "name": "Update User Profile", "request": { "method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\"name\":\"Updated User\",\"email\":\"updateduser@example.com\",\"title\":\"Senior Developer\",\"skills\":[\"PHP\",\"Laravel\"],\"experience\":[{\"company\":\"XYZ Corp.\",\"position\":\"Lead Developer\",\"startDate\":\"2018-01-01\",\"endDate\":\"2025-01-01\"}],\"education\":[{\"school\":\"Example Tech\",\"degree\":\"MSc Software Engineering\",\"startDate\":\"2013-01-01\",\"endDate\":\"2015-01-01\"}]}" }, "url": { "raw": "http://localhost/api/user-profiles/1", "protocol": "http", "host": ["localhost"], "path": ["api", "user-profiles", "1"] } } },
+    { "name": "Delete User Profile", "request": { "method": "DELETE", "url": { "raw": "http://localhost/api/user-profiles/1", "protocol": "http", "host": ["localhost"], "path": ["api", "user-profiles", "1"] } } },
+
+    
+    { "name": "Get Post Boards", "request": { "method": "GET", "url": { "raw": "http://localhost/api/post-boards", "protocol": "http", "host": ["localhost"], "path": ["api", "post-boards"] } } },
+    { "name": "Create Post Board", "request": { "method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\"name\":\"Test Board\",\"url\":\"https://example.com\",\"type\":\"forum\",\"description\":\"A test board.\",\"requires_authentication\":false,\"authentication_details\":{},\"search_parameters\":{},\"search_frequency_hours\":12}" }, "url": { "raw": "http://localhost/api/post-boards", "protocol": "http", "host": ["localhost"], "path": ["api", "post-boards"] } } },
+    { "name": "Show Post Board", "request": { "method": "GET", "url": { "raw": "http://localhost/api/post-boards/1", "protocol": "http", "host": ["localhost"], "path": ["api", "post-boards", "1"] } } },
+    { "name": "Update Post Board", "request": { "method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\"name\":\"Updated Board\",\"url\":\"https://example.com\",\"type\":\"forum\",\"description\":\"An updated test board.\",\"requires_authentication\":false,\"authentication_details\":{},\"search_parameters\":{},\"search_frequency_hours\":24}" }, "url": { "raw": "http://localhost/api/post-boards/1", "protocol": "http", "host": ["localhost"], "path": ["api", "post-boards", "1"] } } },
+    { "name": "Delete Post Board", "request": { "method": "DELETE", "url": { "raw": "http://localhost/api/post-boards/1", "protocol": "http", "host": ["localhost"], "path": ["api", "post-boards", "1"] } } },
+
+    
+    { "name": "Get Search Criteria", "request": { "method": "GET", "url": { "raw": "http://localhost/api/search-criteria", "protocol": "http", "host": ["localhost"], "path": ["api", "search-criteria"] } } },
+    { "name": "Create Search Criteria", "request": { "method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\"name\":\"Test Criteria\",\"criteria\":[\"remote\",\"full-time\"]}" }, "url": { "raw": "http://localhost/api/search-criteria", "protocol": "http", "host": ["localhost"], "path": ["api", "search-criteria"] } } },
+    { "name": "Show Search Criteria", "request": { "method": "GET", "url": { "raw": "http://localhost/api/search-criteria/1", "protocol": "http", "host": ["localhost"], "path": ["api", "search-criteria", "1"] } } },
+    { "name": "Update Search Criteria", "request": { "method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\"name\":\"Updated Criteria\",\"criteria\":[\"onsite\",\"part-time\"]}" }, "url": { "raw": "http://localhost/api/search-criteria/1", "protocol": "http", "host": ["localhost"], "path": ["api", "search-criteria", "1"] } } },
+    { "name": "Delete Search Criteria", "request": { "method": "DELETE", "url": { "raw": "http://localhost/api/search-criteria/1", "protocol": "http", "host": ["localhost"], "path": ["api", "search-criteria", "1"] } } },
+
+    
+    { "name": "Get Posts", "request": { "method": "GET", "url": { "raw": "http://localhost/api/posts", "protocol": "http", "host": ["localhost"], "path": ["api", "posts"] } } },
+    { "name": "Create Post", "request": { "method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\"post_board_id\":1,\"external_id\":\"abc123\",\"title\":\"Software Engineer\",\"description\":\"Exciting opportunity to work with a dynamic team.\",\"company_name\":\"Tech Corp\",\"location\":\"Remote\",\"post_url\":\"https://example.com/job/software-engineer\"}" }, "url": { "raw": "http://localhost/api/posts", "protocol": "http", "host": ["localhost"], "path": ["api", "posts"] } } },
+    { "name": "Show Post", "request": { "method": "GET", "url": { "raw": "http://localhost/api/posts/1", "protocol": "http", "host": ["localhost"], "path": ["api", "posts", "1"] } } },
+    { "name": "Update Post", "request": { "method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\"title\":\"Updated Post\",\"body\":\"This is an updated test post.\"}" }, "url": { "raw": "http://localhost/api/posts/1", "protocol": "http", "host": ["localhost"], "path": ["api", "posts", "1"] } } },
+    { "name": "Delete Post", "request": { "method": "DELETE", "url": { "raw": "http://localhost/api/posts/1", "protocol": "http", "host": ["localhost"], "path": ["api", "posts", "1"] } } },
+
+    
+    { "name": "Get Post Matches", "request": { "method": "GET", "url": { "raw": "http://localhost/api/post-matches", "protocol": "http", "host": ["localhost"], "path": ["api", "post-matches"] } } },
+    { "name": "Create Post Match", "request": { "method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\"name\":\"Test Match\",\"post_id\":1,\"user_profile_id\":1}" }, "url": { "raw": "http://localhost/api/post-matches", "protocol": "http", "host": ["localhost"], "path": ["api", "post-matches"] } } },
+    { "name": "Show Post Match", "request": { "method": "GET", "url": { "raw": "http://localhost/api/post-matches/1", "protocol": "http", "host": ["localhost"], "path": ["api", "post-matches", "1"] } } },
+    { "name": "Update Post Match", "request": { "method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\"name\":\"Updated Match\",\"post_id\":1,\"user_profile_id\":1}" }, "url": { "raw": "http://localhost/api/post-matches/1", "protocol": "http", "host": ["localhost"], "path": ["api", "post-matches", "1"] } } },
+    { "name": "Delete Post Match", "request": { "method": "DELETE", "url": { "raw": "http://localhost/api/post-matches/1", "protocol": "http", "host": ["localhost"], "path": ["api", "post-matches", "1"] } } },
+
+    
+    { "name": "Mark Post Match as Viewed", "request": { "method": "POST", "url": { "raw": "http://localhost/api/post-matches/1/view", "protocol": "http", "host": ["localhost"], "path": ["api", "post-matches", "1", "view"] } } },
+    { "name": "Mark Post Match as Applied", "request": { "method": "POST", "url": { "raw": "http://localhost/api/post-matches/1/apply", "protocol": "http", "host": ["localhost"], "path": ["api", "post-matches", "1", "apply"] } } },
+    { "name": "Mark Post Match as Rejected", "request": { "method": "POST", "url": { "raw": "http://localhost/api/post-matches/1/reject", "protocol": "http", "host": ["localhost"], "path": ["api", "post-matches", "1", "reject"] } } },
+    { "name": "Mark Post Match as Interested", "request": { "method": "POST", "url": { "raw": "http://localhost/api/post-matches/1/interested", "protocol": "http", "host": ["localhost"], "path": ["api", "post-matches", "1", "interested"] } } },
+    { "name": "Mark Post Match as Not Interested", "request": { "method": "POST", "url": { "raw": "http://localhost/api/post-matches/1/not-interested", "protocol": "http", "host": ["localhost"], "path": ["api", "post-matches", "1", "not-interested"] } } },
+
+    
+    { "name": "Search Posts", "request": { "method": "GET", "url": { "raw": "http://localhost/api/posts/search", "protocol": "http", "host": ["localhost"], "path": ["api", "posts", "search"] } } },
+    { "name": "Scrape Post Details", "request": { "method": "POST", "url": { "raw": "http://localhost/api/posts/1/scrape", "protocol": "http", "host": ["localhost"], "path": ["api", "posts", "1", "scrape"] } } },
+
+    
+    { "name": "Match Posts", "request": { "method": "POST", "url": { "raw": "http://localhost/api/matching/match-posts", "protocol": "http", "host": ["localhost"], "path": ["api", "matching", "match-posts"] } } },
+    { "name": "Get Matching Suggestions", "request": { "method": "GET", "url": { "raw": "http://localhost/api/matching/suggestions", "protocol": "http", "host": ["localhost"], "path": ["api", "matching", "suggestions"] } } },
+
+    
+    { "name": "Generate Cover Letter", "request": { "method": "POST", "url": { "raw": "http://localhost/api/ai/generate-cover-letter", "protocol": "http", "host": ["localhost"], "path": ["api", "ai", "generate-cover-letter"] } } }
+  ]
+}
