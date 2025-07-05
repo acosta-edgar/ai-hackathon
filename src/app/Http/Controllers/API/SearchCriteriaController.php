@@ -39,7 +39,6 @@ class SearchCriteriaController extends BaseController
         $input = $request->all();
 
         $validator = Validator::make($input, [
-            'user_profile_id' => 'required|exists:user_profiles,id',
             'name' => 'required|string|max:255',
             'is_default' => 'boolean',
             'keywords' => 'nullable|array',
@@ -61,12 +60,6 @@ class SearchCriteriaController extends BaseController
 
         if ($validator->fails()) {
             return $this->sendError('Validation Error', $validator->errors(), 422);
-        }
-
-        // If this is set as default, unset default from other criteria for this user
-        if (isset($input['is_default']) && $input['is_default']) {
-            SearchCriteria::where('user_profile_id', $input['user_profile_id'])
-                ->update(['is_default' => false]);
         }
 
         $searchCriteria = SearchCriteria::create($input);
@@ -156,14 +149,6 @@ class SearchCriteriaController extends BaseController
 
         if (is_null($searchCriteria)) {
             return $this->sendError('Search criteria not found');
-        }
-
-        // Don't allow deletion if this is the only search criteria for the user
-        $userCriteriaCount = SearchCriteria::where('user_profile_id', $searchCriteria->user_profile_id)
-            ->count();
-            
-        if ($userCriteriaCount <= 1) {
-            return $this->sendError('Cannot delete the only search criteria for this user', [], 409);
         }
 
         $searchCriteria->delete();

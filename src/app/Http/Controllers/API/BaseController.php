@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Contracts\Support\MessageBag;
 
 class BaseController extends Controller
 {
@@ -30,11 +31,11 @@ class BaseController extends Controller
      * Error response method.
      *
      * @param string $error
-     * @param array $errorMessages
+     * @param MessageBag $errorMessages
      * @param int $code
      * @return \Illuminate\Http\JsonResponse
      */
-    public function sendError(string $error, array $errorMessages = [], int $code = 404)
+    public function sendError(string $error, MessageBag $errorMessages = null, int $code = 404)
     {
         $response = [
             'success' => false,
@@ -42,7 +43,7 @@ class BaseController extends Controller
         ];
 
         if (!empty($errorMessages)) {
-            $response['data'] = $errorMessages;
+            $response['data'] = $errorMessages->getMessages();
         }
 
         return response()->json($response, $code);
