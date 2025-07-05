@@ -191,12 +191,16 @@ export default {
     return {
       job: null,
       similarJobs: [],
-      matchAnalysis: '',
+      matchAnalysis: null,
       loading: false,
       error: null,
       isSaved: false,
       isApplied: false,
-      loadingAnalysis: false
+      loadingAnalysis: false,
+      generatingCoverLetter: false,
+      coverLetter: '',
+      coverLetterError: null,
+      copyButtonText: 'Copy to clipboard'
     }
   },
   created() {
@@ -224,8 +228,8 @@ export default {
         await this.checkJobStatus()
         
         // Load match analysis if available
-        if (this.job.match_score) {
-          this.loadMatchAnalysis()
+        if (this.job.match_analysis) {
+          this.matchAnalysis = this.job.match_analysis
         }
       } catch (error) {
         console.error('Error fetching job details:', error)
@@ -233,6 +237,99 @@ export default {
       } finally {
         this.loading = false
       }
+    },
+    
+    async generateMatchAnalysis() {
+      if (!this.job) return
+      
+      this.loadingAnalysis = true
+      this.matchAnalysis = null
+      this.error = null
+      
+      try {
+        const response = await this.$axios.post(`/api/jobs/${this.jobId}/analyze-match`)
+        this.matchAnalysis = response.data.analysis
+        
+        // Update the job with the new analysis
+        if (this.job) {
+          this.job.match_analysis = this.matchAnalysis
+        }
+        
+        this.$toast.success('Match analysis generated successfully!')
+      } catch (error) {
+        console.error('Error generating match analysis:', error)
+        this.error = 'Failed to generate match analysis. Please try again.'
+        this.$toast.error('Failed to generate match analysis')
+      } finally {
+        this.loadingAnalysis = false
+      }
+    },
+    
+    async generateCoverLetter() {
+      if (!this.job) return
+      
+      this.generatingCoverLetter = true
+      this.coverLetter = ''
+      this.coverLetterError = null
+      
+      try {
+        const response = await this.$axios.post(`/api/jobs/${this.jobId}/generate-cover-letter`, {
+          tone: 'professional',
+          highlight_skills: true,
+          include_salary_expectations: false
+        })
+        
+        this.coverLetter = response.data.cover_letter
+        this.$toast.success('Cover letter generated successfully!')
+      } catch (error) {
+        console.error('Error generating cover letter:', error)
+        this.coverLetterError = error.response?.data?.message || 'Failed to generate cover letter. Please try again.'
+        this.$toast.error('Failed to generate cover letter')
+      } finally {
+        this.generatingCoverLetter = false
+      }
+    },
+    
+    async copyToClipboard(text) {
+      try {
+        await navigator.clipboard.writeText(text)
+        this.copyButtonText = 'Copied!'
+        this.$toast.success('Copied to clipboard')
+        
+        // Reset button text after 2 seconds
+        setTimeout(() => {
+          this.copyButtonText = 'Copy to clipboard'
+        }, 2000)
+      } catch (err) {
+        console.error('Failed to copy text:', err)
+        this.$toast.error('Failed to copy to clipboard')
+      }
+    },
+    
+    formatCoverLetter(text) {
+      // Convert line breaks to <p> tags
+      return text.replace(/\n\n+/g, '</p><p>').replace(/\n/g, '<br>')
+    },
+    
+    getMatchScoreColor(score) {
+      if (score >= 80) return '#10B981' // green-500
+      if (score >= 60) return '#3B82F6' // blue-500
+      if (score >= 40) return '#F59E0B' // yellow-500
+      return '#EF4444' // red-500
+    },
+    
+    getMatchScoreTextColor(score) {
+      if (score >= 80) return 'text-green-600'
+      if (score >= 60) return 'text-blue-600'
+      if (score >= 40) return 'text-yellow-600'
+      return 'text-red-600'
+    },
+    
+    getMatchScoreClass(score) {
+      if (score >= 80) return 'bg-green-500'
+      if (score >= 60) return 'bg-blue-500'
+      if (score >= 40) return 'bg-yellow-500'
+      return 'bg-red-500'
     },
     
     async fetchSimilarJobs() {
