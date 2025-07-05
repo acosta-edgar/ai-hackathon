@@ -46,6 +46,7 @@ class PostMatch extends Model
         'weaknesses' => 'array',
         'missing_skills' => 'array',
         'matching_skills' => 'array',
+        'improvement_suggestions' => 'array',
         'is_interested' => 'boolean',
         'is_not_interested' => 'boolean',
         'viewed_at' => 'datetime',
