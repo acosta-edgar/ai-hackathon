@@ -344,7 +344,7 @@ class GeminiApiService
         - Title: {$post['title']}
         - Company: {$post['company_name']}
         - Location: {$post['location']}
-        - Post Type: {$post['post_type'] ?? 'Not specified'}
+        - Job Type: {$post['post_type'] ?? 'Not specified'}
         - Experience Level: {$post['experience_level'] ?? 'Not specified'}
         - Skills: {$this->formatSkills($post['skills'] ?? [])}
         - Description: {$post['description']}
@@ -359,7 +359,7 @@ class GeminiApiService
         Search Criteria (if applicable):
         - Keywords: {$this->formatArray($searchCriteria['keywords'] ?? [])}
         - Locations: {$this->formatArray($searchCriteria['locations'] ?? [])}
-        - Post Types: {$this->formatArray($searchCriteria['post_types'] ?? [])}
+        - Job Types: {$this->formatArray($searchCriteria['post_types'] ?? [])}
         - Experience Levels: {$this->formatArray($searchCriteria['experience_levels'] ?? [])}
         
         Please provide a detailed analysis including:
