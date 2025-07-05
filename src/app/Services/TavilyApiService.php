@@ -17,11 +17,11 @@ class TavilyApiService
     protected $client;
 
     /**
-     * The API base URL.
+     * The API base URL for Tavily Crawl API.
      *
      * @var string
      */
-    protected $baseUrl = 'https://api.tavily.com';
+    protected $baseUrl = 'https://api.tavily.com/crawl';
 
     /**
      * The API key.
@@ -52,7 +52,7 @@ class TavilyApiService
     }
 
     /**
-     * Search for posts based on the given parameters.
+     * Crawl job listings using Tavily Crawl API.
      *
      * @param  array  $params
      * @return array
@@ -61,223 +61,170 @@ class TavilyApiService
     public function searchPosts(array $params): array
     {
         $defaultParams = [
-            'query' => '',
-            'location' => '',
-            'page' => 1,
-            'limit' => 10,
-            'post_type' => '',
-            'date_posted' => 'month', // day, 3days, week, month, anytime
-            'sort_by' => 'relevance', // relevance, date
-            'radius' => 25, // in miles
-            'include_company_posts' => false,
+            'urls' => [],
+            'crawl_depth' => 1,
+            'include_images' => false,
+            'include_links' => true,
+            'include_screenshot' => false,
+            'include_pdf' => false,
+            'include_raw_html' => true,
+            'include_structured_data' => true,
+            'timeout' => 30,
         ];
 
         $searchParams = array_merge($defaultParams, $params);
         
+        if (empty($searchParams['urls'])) {
+            throw new \InvalidArgumentException('At least one URL is required for crawling');
+        }
+        
         try {
-            $response = $this->client->post('/posts/search', [
-                'json' => [
-                    'api_key' => $this->apiKey,
-                    'query' => $searchParams['query'],
-                    'location' => $searchParams['location'],
-                    'page' => $searchParams['page'],
-                    'limit' => $searchParams['limit'],
-                    'post_type' => $searchParams['post_type'],
-                    'date_posted' => $searchParams['date_posted'],
-                    'sort_by' => $searchParams['sort_by'],
-                    'radius' => $searchParams['radius'],
-                    'include_company_posts' => $searchParams['include_company_posts'],
-                ]
+            $response = $this->client->post('/crawl', [
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                    'Authorization' => 'Bearer ' . $this->apiKey,
+                ],
+                'json' => array_filter($searchParams, function($value) {
+                    return $value !== null && $value !== '' && $value !== [];
+                })
             ]);
 
             $data = json_decode($response->getBody()->getContents(), true);
 
-            return $this->formatPostResults($data);
+            return $this->formatCrawlResults($data);
         } catch (GuzzleException $e) {
-            Log::error('Tavily API Error: ' . $e->getMessage(), [
+            Log::error('Tavily Crawl API Error: ' . $e->getMessage(), [
                 'exception' => $e,
                 'params' => $searchParams,
             ]);
             
-            throw new \Exception('Failed to fetch posts from Tavily API: ' . $e->getMessage(), $e->getCode(), $e);
+            throw new \Exception('Failed to crawl with Tavily API: ' . $e->getMessage(), $e->getCode(), $e);
         }
     }
 
     /**
-     * Get post details by ID.
+     * Format the crawl results from Tavily Crawl API.
      *
-     * @param  string  $postId
+     * @param  array  $data
+     * @return array
+     */
+    protected function formatCrawlResults(array $data): array
+    {
+        if (!isset($data['results']) || !is_array($data['results'])) {
+            return [];
+        }
+
+        $formattedResults = [];
+        
+        foreach ($data['results'] as $result) {
+            $formattedResults[] = [
+                'url' => $result['url'] ?? '#',
+                'title' => $result['title'] ?? 'No title',
+                'content' => $result['content'] ?? '',
+                'html' => $result['html'] ?? '',
+                'links' => $result['links'] ?? [],
+                'images' => $result['images'] ?? [],
+                'screenshot' => $result['screenshot'] ?? null,
+                'pdf' => $result['pdf'] ?? null,
+                'structured_data' => $result['structured_data'] ?? [],
+                'crawled_at' => now()->toDateTimeString(),
+                'status' => $result['status'] ?? 'unknown',
+            ];
+        }
+
+        return [
+            'results' => $formattedResults,
+            'total' => count($formattedResults),
+            'request_id' => $data['request_id'] ?? null,
+            'crawl_id' => $data['crawl_id'] ?? null,
+        ];
+    }
+
+    /**
+     * Extract company name from URL if possible.
+     *
+     * @param  string  $url
+     * @return string
+     */
+    protected function extractCompanyFromUrl(string $url): string
+    {
+        $host = parse_url($url, PHP_URL_HOST) ?? '';
+        $parts = explode('.', $host);
+        
+        if (count($parts) > 1) {
+            // Remove 'www' if present and get the first part of the domain
+            $company = $parts[0] === 'www' ? $parts[1] : $parts[0];
+            return ucfirst($company);
+        }
+        
+        return 'Unknown Company';
+    }
+
+    /**
+     * Extract location from result if available.
+     *
+     * @param  array  $result
+     * @return string
+     */
+    protected function extractLocation(array $result): string
+    {
+        if (isset($result['metadata']['location'])) {
+            return $result['metadata']['location'];
+        }
+        
+        // Try to extract location from content or title
+        $text = ($result['content'] ?? '') . ' ' . ($result['title'] ?? '');
+        
+        // Simple pattern to find common location indicators
+        if (preg_match('/(remote|anywhere|work from home|wfh)/i', $text)) {
+            return 'Remote';
+        }
+        
+        return 'Location not specified';
+    }
+    
+    /**
+     * Check if the job is remote based on available data.
+     *
+     * @param  array  $job
+     * @return bool
+     */
+    protected function isRemoteJob(array $job): bool
+    {
+        $text = strtolower(($job['content'] ?? '') . ' ' . ($job['title'] ?? ''));
+        
+        return str_contains($text, 'remote') || 
+               str_contains($text, 'work from home') || 
+               str_contains($text, 'wfh') ||
+               str_contains($text, 'anywhere in the world') ||
+               str_contains($text, 'virtual office');
+    }
+
+    /**
+     * Get the crawl status for a specific crawl request.
+     *
+     * @param  string  $crawlId
      * @return array
      * @throws \Exception
      */
-    public function getPostDetails(string $postId): array
+    public function getCrawlStatus(string $crawlId): array
     {
         try {
-            $response = $this->client->get("/posts/{$postId}", [
-                'query' => [
-                    'api_key' => $this->apiKey,
+            $response = $this->client->get("/crawl/status/{$crawlId}", [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $this->apiKey,
                 ]
             ]);
 
             return json_decode($response->getBody()->getContents(), true);
         } catch (GuzzleException $e) {
-            Log::error('Tavily API Error: ' . $e->getMessage(), [
+            Log::error('Tavily Crawl API Error (getCrawlStatus): ' . $e->getMessage(), [
                 'exception' => $e,
-                'post_id' => $postId,
+                'crawl_id' => $crawlId,
             ]);
             
-            throw new \Exception('Failed to fetch post details from Tavily API: ' . $e->getMessage(), $e->getCode(), $e);
+            throw new \Exception('Failed to get crawl status: ' . $e->getMessage(), $e->getCode(), $e);
         }
-    }
-
-    /**
-     * Format post results from Tavily API to a standardized format.
-     *
-     * @param  array  $apiResponse
-     * @return array
-     */
-    protected function formatPostResults(array $apiResponse): array
-    {
-        $formattedPosts = [];
-        
-        if (empty($apiResponse['posts'])) {
-            return [];
-        }
-
-        foreach ($apiResponse['posts'] as $post) {
-            $formattedPosts[] = [
-                'external_id' => $post['id'] ?? null,
-                'title' => $post['title'] ?? 'No Title',
-                'description' => $this->cleanHtml($post['description'] ?? ''),
-                'company_name' => $post['company'] ?? 'Unknown Company',
-                'company_website' => $post['company_url'] ?? null,
-                'company_logo_url' => $post['company_logo'] ?? null,
-                'location' => $post['location'] ?? 'Remote',
-                'is_remote' => $this->isRemotePost($post),
-                'post_type' => $this->mapPostType($post['post_type'] ?? ''),
-                'salary_min' => $post['salary_min'] ?? null,
-                'salary_max' => $post['salary_max'] ?? null,
-                'salary_currency' => $post['salary_currency'] ?? 'USD',
-                'salary_period' => $this->mapSalaryPeriod($post['salary_period'] ?? ''),
-                'salary_is_estimate' => $post['salary_is_estimate'] ?? true,
-                'skills' => $post['skills'] ?? [],
-                'categories' => $post['categories'] ?? [],
-                'apply_url' => $post['apply_url'] ?? $post['url'] ?? null,
-                'post_url' => $post['url'] ?? null,
-                'posted_at' => $post['posted_date'] ?? null,
-                'expires_at' => $post['expiry_date'] ?? null,
-                'is_active' => true,
-                'raw_data' => $post,
-            ];
-        }
-
-        return [
-            'posts' => $formattedPosts,
-            'total' => $apiResponse['total'] ?? count($formattedPosts),
-            'page' => $apiResponse['page'] ?? 1,
-            'total_pages' => $apiResponse['total_pages'] ?? 1,
-        ];
-    }
-
-    /**
-     * Check if the post is remote based on available data.
-     *
-     * @param  array  $post
-     * @return bool
-     */
-    protected function isRemotePost(array $post): bool
-    {
-        if (isset($post['is_remote'])) {
-            return (bool) $post['is_remote'];
-        }
-
-        $location = strtolower($post['location'] ?? '');
-        $title = strtolower($post['title'] ?? '');
-        
-        return str_contains($location, 'remote') || 
-               str_contains($title, 'remote') ||
-               str_contains($location, 'anywhere') ||
-               str_contains($post['description'] ?? '', 'work from home') ||
-               str_contains($post['description'] ?? '', 'remote work');
-    }
-
-    /**
-     * Map post type from Tavily to our standard format.
-     *
-     * @param  string  $postType
-     * @return string
-     */
-    protected function mapPostType(string $postType): string
-    {
-        $postType = strtolower(trim($postType));
-        
-        $mapping = [
-            'full-time' => 'full-time',
-            'full_time' => 'full-time',
-            'full time' => 'full-time',
-            'part-time' => 'part-time',
-            'part_time' => 'part-time',
-            'part time' => 'part-time',
-            'contract' => 'contract',
-            'temporary' => 'temporary',
-            'temp' => 'temporary',
-            'internship' => 'internship',
-            'intern' => 'internship',
-            'volunteer' => 'volunteer',
-            'freelance' => 'contract',
-            'per-diem' => 'per-diem',
-            'per_diem' => 'per-diem',
-            'per diem' => 'per-diem',
-        ];
-
-        return $mapping[$postType] ?? 'full-time';
-    }
-
-    /**
-     * Map salary period from Tavily to our standard format.
-     *
-     * @param  string  $period
-     * @return string
-     */
-    protected function mapSalaryPeriod(string $period): string
-    {
-        $period = strtolower(trim($period));
-        
-        $mapping = [
-            'year' => 'year',
-            'yearly' => 'year',
-            'annum' => 'year',
-            'month' => 'month',
-            'monthly' => 'month',
-            'week' => 'week',
-            'weekly' => 'week',
-            'day' => 'day',
-            'daily' => 'day',
-            'hour' => 'hour',
-            'hourly' => 'hour',
-        ];
-
-        return $mapping[$period] ?? 'year';
-    }
-
-    /**
-     * Clean HTML from post descriptions.
-     *
-     * @param  string  $html
-     * @return string
-     */
-    protected function cleanHtml(string $html): string
-    {
-        // Strip HTML tags but preserve line breaks and paragraphs
-        $text = strip_tags($html, '<p><br><ul><ol><li><strong><em><b><i><u>');
-        
-        // Convert HTML entities to their corresponding characters
-        $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-        
-        // Normalize whitespace
-        $text = preg_replace('/\s+/', ' ', $text);
-        
-        return trim($text);
     }
 
     /**
@@ -289,13 +236,20 @@ class TavilyApiService
     public function getCredits(): array
     {
         try {
-            $response = $this->client->get('/credits', [
-                'query' => [
-                    'api_key' => $this->apiKey,
+            $response = $this->client->get('https://api.tavily.com/account', [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $this->apiKey,
                 ]
             ]);
 
-            return json_decode($response->getBody()->getContents(), true);
+            $data = json_decode($response->getBody()->getContents(), true);
+            
+            return [
+                'credits_remaining' => $data['credits_remaining'] ?? 0,
+                'plan' => $data['plan'] ?? 'free',
+                'crawl_credits' => $data['crawl_credits'] ?? 0,
+                'credits_used_this_month' => $data['credits_used_this_month'] ?? 0,
+            ];
         } catch (GuzzleException $e) {
             Log::error('Tavily API Error (getCredits): ' . $e->getMessage(), [
                 'exception' => $e,
