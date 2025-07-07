@@ -338,7 +338,8 @@ export default {
     MagnifyingGlassIcon,
     ChevronLeftIcon,
     ChevronRightIcon,
-    ArrowPathIcon
+    ArrowPathIcon,
+    ExclamationTriangleIcon
   },
   
   setup() {
@@ -620,6 +621,7 @@ export default {
     return {
       jobs,
       loading,
+      error,
       meta,
       pages,
       filters,

@@ -14,7 +14,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['filter-change'])
+const emit = defineEmits(['filter-change', 'reset'])
 
 const route = useRoute()
 const isOpen = ref(false)
@@ -96,6 +96,7 @@ const resetFilters = () => {
     skills: [],
     sort_by: 'relevance'
   }
+  emit('reset')
   applyFilters()
 }
 

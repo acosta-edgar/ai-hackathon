@@ -15,10 +15,9 @@
               v-for="item in settingsNav"
               :key="item.name"
               :to="item.href"
-              v-slot="{ isActive }"
               class="group flex items-center px-3 py-2 text-sm font-medium rounded-md"
               :class="[
-                isActive
+                isRouteActive(item.href.name)
                   ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
                   : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white',
               ]"
@@ -27,7 +26,7 @@
                 :is="item.icon"
                 class="mr-3 flex-shrink-0 h-5 w-5"
                 :class="[
-                  isActive
+                  isRouteActive(item.href.name)
                     ? 'text-primary-500'
                     : 'text-gray-400 group-hover:text-gray-500 dark:group-hover:text-gray-300',
                 ]"
@@ -48,11 +47,15 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
 import {
   UserIcon,
   BellIcon,
   CreditCardIcon
 } from '@heroicons/vue/24/outline'
+
+const route = useRoute()
 
 const settingsNav = [
   {
@@ -71,4 +74,8 @@ const settingsNav = [
     icon: CreditCardIcon
   }
 ]
+
+const isRouteActive = (routeName) => {
+  return route.name === routeName
+}
 </script> 
